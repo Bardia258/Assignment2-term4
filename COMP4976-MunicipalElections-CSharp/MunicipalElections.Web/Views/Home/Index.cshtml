@@ -1,0 +1,19 @@
+﻿@model IEnumerable<MunicipalElections.Web.ViewModels.MunicipalityViewModel>
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center mb-5 bg-body-tertiary p-5 rounded shadow-sm">
+    <h1 class="display-4 fw-bold text-primary">Your Municipal Election Guide</h1>
+    <p class="lead">Prepare for the October 17, 2026 election. Review candidates and build your personalized voting guide.</p>
+    <a class="btn btn-primary btn-lg" asp-controller="Municipalities" asp-action="Index">View Municipalities</a>
+</div>
+
+<h3 class="mb-4">Participating Municipalities</h3>
+<div class="row">
+    @foreach (var muni in Model)
+    {
+        <partial name="_MunicipalityCard" model="muni" />
+    }
+</div>
