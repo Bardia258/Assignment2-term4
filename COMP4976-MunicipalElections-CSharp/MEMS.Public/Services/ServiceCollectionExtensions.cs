@@ -21,6 +21,8 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddMockElectionApi(this IServiceCollection services)
     {
         services.AddScoped<IMunicipalityApiClient, MockMunicipalityApiClient>();
+        services.AddScoped<IPositionApiClient, MockPositionApiClient>();
+        services.AddScoped<ICandidateApiClient, MockCandidateApiClient>();
         return services;
     }
 }
