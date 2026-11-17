@@ -113,3 +113,17 @@ code {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+/* ---- Public site ---- */
+.mw-prose {
+    max-width: 70ch;
+}
+
+.municipality-card {
+    transition: box-shadow .15s ease-in-out, transform .15s ease-in-out;
+}
+
+    .municipality-card:hover,
+    .municipality-card:focus-visible {
+        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .12);
+        transform: translateY(-2px);
+    }
