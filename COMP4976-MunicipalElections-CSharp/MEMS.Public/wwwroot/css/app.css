@@ -167,3 +167,13 @@ code {
 .candidate-profile {
     white-space: pre-line;
 }
+
+/* Voting guide */
+.guide-open-seat {
+    border-style: dashed;
+    background-color: transparent;
+}
+
+.guide-status:focus {
+    outline: none;
+}

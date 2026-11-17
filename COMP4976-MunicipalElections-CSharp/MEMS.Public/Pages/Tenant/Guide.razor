@@ -1,0 +1,11 @@
+@page "/{Tenant}/guide"
+@using MEMS.Public.Components.Ballot
+
+<TenantGuard Tenant="@Tenant" Context="municipality">
+    <PageTitle>My voting guide · @municipality.Name</PageTitle>
+    <VotingGuide Municipality="municipality" />
+</TenantGuard>
+
+@code {
+    [Parameter] public string Tenant { get; set; } = "";
+}
