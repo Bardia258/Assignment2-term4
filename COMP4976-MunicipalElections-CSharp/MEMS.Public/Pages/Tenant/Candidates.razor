@@ -1,4 +1,5 @@
 @page "/{Tenant}/candidates"
+@inject NavigationManager Navigation
 
 <TenantGuard Tenant="@Tenant" Context="municipality">
     <PageTitle>Candidates · @municipality.Name</PageTitle>
@@ -10,14 +11,32 @@
         <h1>Candidates</h1>
         <p class="lead mw-prose">
             Everyone running for each position on the @municipality.Name ballot.
-            Select a candidate to read their full profile.
+            Search by name or pick a position, then select a candidate to read their full profile.
         </p>
     </section>
 
-    @* Search and position filtering are added in Phase 3. *@
-    <CandidateDirectory Municipality="municipality" />
+    <CandidateDirectory Municipality="municipality" Filter="filter" FilterChanged="OnFilterChanged" />
 </TenantGuard>
 
 @code {
     [Parameter] public string Tenant { get; set; } = "";
+
+    // Read as strings so a malformed link (?position=abc) is ignored instead of failing the page.
+    [SupplyParameterFromQuery(Name = "q")] public string? Search { get; set; }
+    [SupplyParameterFromQuery(Name = "position")] public string? Position { get; set; }
+
+    private CandidateFilterState filter = CandidateFilterState.Empty;
+
+    protected override void OnParametersSet() => filter = CandidateFilterState.FromQuery(Search, Position);
+
+    private void OnFilterChanged(CandidateFilterState state)
+    {
+        // Keep the URL in sync without adding a history entry for every keystroke or click.
+        var uri = Navigation.GetUriWithQueryParameters(new Dictionary<string, object?>
+        {
+            ["q"] = state.Search,
+            ["position"] = state.PositionId,
+        });
+        Navigation.NavigateTo(uri, replace: true);
+    }
 }
