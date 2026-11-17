@@ -27,8 +27,7 @@ public sealed class MockCandidateApiClient(ILogger<MockCandidateApiClient> logge
         }
 
         var result = candidates.OrderBy(c => c.Name).ThenBy(c => c.Id).ToList();
-        var count = result.Count;
-        logger.LogInformation("Mock API returned {Count} candidates for {Slug}", count, slug);
+        logger.MockCandidatesReturned(result.Count, slug);
         return result;
     }
 
@@ -42,7 +41,7 @@ public sealed class MockCandidateApiClient(ILogger<MockCandidateApiClient> logge
         var match = MockElectionData.Candidates.SingleOrDefault(c =>
             c.Id == candidateId && MockTenant.Owns(municipalitySlug, c.MunicipalityId));
         if (match is null)
-            logger.LogWarning("Mock API: candidate {CandidateId} not found in {Slug}", candidateId, municipalitySlug);
+            logger.MockCandidateNotFound(candidateId, municipalitySlug);
         return match;
     }
 }

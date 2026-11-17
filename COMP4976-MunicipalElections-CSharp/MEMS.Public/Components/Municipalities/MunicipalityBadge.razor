@@ -1,0 +1,40 @@
+@*
+    Municipality logo (or initials when there's no logo or it fails to load) next to its name.
+    Ported from A1's _MunicipalityBadge, which used an inline onerror="..." script for the fallback;
+    here Blazor's @onerror handles it.
+*@
+<span class="municipality-badge municipality-badge-@Size">
+    <span class="municipality-logo-container" aria-hidden="true">
+        @if (!string.IsNullOrWhiteSpace(Municipality.LogoUrl) && !logoFailed)
+        {
+            <img src="@Municipality.LogoUrl" class="municipality-logo" alt="" loading="lazy" @onerror="() => logoFailed = true" />
+        }
+        else
+        {
+            <span class="municipality-logo municipality-logo-placeholder">@Initials</span>
+        }
+    </span>
+    <span>@Municipality.Name</span>
+</span>
+
+@code {
+    [Parameter, EditorRequired] public MunicipalityResponse Municipality { get; set; } = default!;
+
+    /// <summary>"sm" (inline), "md" (cards) or "lg" (page header).</summary>
+    [Parameter] public string Size { get; set; } = "sm";
+
+    private bool logoFailed;
+    private string? lastLogoUrl;
+
+    private string Initials => string.Concat(Municipality.Name
+        .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+        .Take(2)
+        .Select(word => char.ToUpperInvariant(word[0])));
+
+    protected override void OnParametersSet()
+    {
+        if (Municipality.LogoUrl == lastLogoUrl) return;
+        lastLogoUrl = Municipality.LogoUrl;
+        logoFailed = false;
+    }
+}

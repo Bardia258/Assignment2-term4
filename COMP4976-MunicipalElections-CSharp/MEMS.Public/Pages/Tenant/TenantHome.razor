@@ -2,22 +2,7 @@
 
 <TenantGuard Tenant="@Tenant" Context="municipality">
     <PageTitle>@municipality.Name elections</PageTitle>
-
-    <section class="py-3">
-        <p class="text-uppercase text-secondary small mb-1">@municipality.Province · Municipal election</p>
-        <h1>@municipality.Name</h1>
-        <p class="lead">
-            Election day: <strong>@municipality.ElectionDate.ToString("dddd, MMMM d, yyyy")</strong>
-        </p>
-        @if (!string.IsNullOrWhiteSpace(municipality.Description))
-        {
-            <p class="mw-prose">@municipality.Description</p>
-        }
-        <div class="d-flex flex-wrap gap-2 mt-2">
-            <a class="btn btn-primary btn-lg" href="@($"{municipality.Slug}/candidates")">Browse candidates</a>
-            <a class="btn btn-outline-primary btn-lg" href="@($"{municipality.Slug}/guide")">My voting guide</a>
-        </div>
-    </section>
+    <MunicipalityOverview Municipality="municipality" />
 </TenantGuard>
 
 @code {

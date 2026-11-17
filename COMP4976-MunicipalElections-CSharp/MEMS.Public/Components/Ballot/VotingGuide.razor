@@ -215,7 +215,7 @@ else
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to load voting guide for {Slug}", slug);
+            Logger.GuideLoadFailed(ex, slug);
             errorMessage = ex is ApiRequestException
                 ? ex.Message
                 : "We couldn't load your voting guide right now. Please try again.";
@@ -238,7 +238,7 @@ else
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to refresh voting guide for {Slug}", slug);
+            Logger.GuideRefreshFailed(ex, "guide page", slug);
         }
     }
 

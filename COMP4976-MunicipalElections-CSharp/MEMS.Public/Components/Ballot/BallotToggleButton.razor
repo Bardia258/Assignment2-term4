@@ -80,7 +80,7 @@
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to refresh voting guide button for candidate {CandidateId}", Candidate.Id);
+            Logger.GuideRefreshFailed(ex, "guide button", Slug);
         }
     }
 
@@ -98,7 +98,7 @@
             else if (await Ballot.AddAsync(Slug, Candidate) == BallotAddResult.LimitReached)
             {
                 // Another button filled the last seat first; the Changed event re-renders this one as "full".
-                Logger.LogInformation("Seat limit reached for position {PositionId}", Candidate.PositionId);
+                Logger.SeatLimitReached(Candidate.PositionId);
             }
         }
         finally { busy = false; }

@@ -1,0 +1,78 @@
+@*
+    Header for a municipality's election. Ported from A1's Views/Municipalities/Details.cshtml header
+    (badge, province, description, election date, positions/seats table). A1 listed every candidate
+    on this page too; here that's the Candidates page, and this page links to it and to the guide.
+*@
+@implements IDisposable
+@using MEMS.Public.Services.Api
+@inject IPositionApiClient PositionApi
+@inject ILogger<MunicipalityOverview> Logger
+
+<section class="bg-body-tertiary p-4 rounded shadow-sm my-3 municipality-detail-header">
+    <h1 class="display-6 fw-bold text-primary mb-1"><MunicipalityBadge Municipality="Municipality" Size="lg" /></h1>
+    <p class="h5 text-secondary">@Municipality.Province · Municipal election</p>
+    @if (!string.IsNullOrWhiteSpace(Municipality.Description))
+    {
+        <p class="lead mt-3 mw-prose">@Municipality.Description</p>
+    }
+    <p class="fw-semibold mb-0">Election day: @Municipality.ElectionDate.ToString("dddd, MMMM d, yyyy")</p>
+
+    <div class="mt-4 municipality-position-summary">
+        <h2 class="h6 text-uppercase text-secondary">On the ballot</h2>
+        @if (loading)
+        {
+            <LoadingSpinner Message="Loading positions…" />
+        }
+        else
+        {
+            <PositionSeats Positions="positions" />
+        }
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 mt-4 d-print-none">
+        <a class="btn btn-primary btn-lg" href="@($"{Municipality.Slug}/candidates")">Browse candidates</a>
+        <a class="btn btn-outline-primary btn-lg" href="@($"{Municipality.Slug}/guide")">My voting guide</a>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public MunicipalityResponse Municipality { get; set; } = default!;
+
+    private IReadOnlyList<PositionResponse>? positions;
+    private bool loading = true;
+    private string? loadedSlug;
+    private CancellationTokenSource? cts;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Municipality.Slug == loadedSlug) return;
+        var slug = loadedSlug = Municipality.Slug;
+        loading = true;
+
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = new CancellationTokenSource();
+        var token = cts.Token;
+        try
+        {
+            positions = await PositionApi.GetPositionsAsync(slug, token);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception ex)
+        {
+            // Not fatal: the rest of the overview is still useful.
+            Logger.PositionsLoadFailed(ex, slug);
+            positions = null;
+        }
+        loading = false;
+    }
+
+    public void Dispose()
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+    }
+}

@@ -72,7 +72,7 @@
 
         if (!TenantSlug.IsValid(slug))
         {
-            Logger.LogWarning("Rejected malformed municipality slug {Slug}", Tenant);
+            Logger.MalformedSlug(Tenant);
             TenantState.Clear();
             status = LoadStatus.NotFound;
             return;
@@ -114,7 +114,7 @@
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to load municipality {Slug}", slug);
+            Logger.MunicipalityLoadFailed(ex, slug);
             errorMessage = ex is ApiRequestException
                 ? ex.Message
                 : "We couldn't load this municipality right now. Please try again.";

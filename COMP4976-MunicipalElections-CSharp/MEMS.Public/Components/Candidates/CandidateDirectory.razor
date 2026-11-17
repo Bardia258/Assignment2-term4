@@ -13,6 +13,7 @@
 @using MEMS.Public.Services
 @using MEMS.Public.Services.Api
 @using MEMS.Public.Services.Ballot
+@using MEMS.Public.Components.Forms
 @inject IPositionApiClient PositionApi
 @inject ICandidateApiClient CandidateApi
 @inject IBallotSessionService Ballot
@@ -36,14 +37,24 @@ else
 {
     var view = BuildView();
 
-    <div class="card card-body bg-body-tertiary mb-3 d-print-none" role="search" aria-label="Find candidates">
+    var searchErrors = searchContext.GetValidationMessages(SearchField).ToList();
+
+    @* Enter submits the form, which does nothing extra: results already update as you type. *@
+    <EditForm EditContext="searchContext" class="card card-body bg-body-tertiary mb-3 d-print-none"
+              role="search" aria-label="Find candidates">
+        <DataAnnotationsValidator />
         <div class="row g-3">
             <div class="col-12 col-lg-4">
                 <label for="candidate-search" class="form-label fw-semibold">Search by name</label>
-                <input id="candidate-search" type="search" @ref="searchInput" class="form-control" autocomplete="off"
-                       placeholder="e.g. Moreno" maxlength="@CandidateFilterState.MaxSearchLength"
-                       aria-describedby="candidate-results"
-                       @bind="searchText" @bind:event="oninput" @bind:after="OnSearchChangedAsync" />
+                <input id="candidate-search" type="search" @ref="searchInput" autocomplete="off"
+                       class="form-control @searchContext.FieldCssClass(SearchField)"
+                       placeholder="e.g. Moreno" aria-invalid="@(searchErrors.Count > 0 ? "true" : null)"
+                       aria-describedby="@(searchErrors.Count > 0 ? "candidate-search-error candidate-results" : "candidate-results")"
+                       @bind="searchForm.Search" @bind:event="oninput" @bind:after="OnSearchChangedAsync" />
+                @foreach (var error in searchErrors)
+                {
+                    <div id="candidate-search-error" class="invalid-feedback d-block">@error</div>
+                }
             </div>
             <div class="col-12 col-lg-8">
                 <span class="form-label fw-semibold d-block">Position</span>
@@ -51,7 +62,7 @@ else
                                 SelectedPositionIdChanged="OnPositionChangedAsync" />
             </div>
         </div>
-    </div>
+    </EditForm>
 
     <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
         <p id="candidate-results" class="text-secondary small mb-0" role="status" aria-live="polite">
@@ -139,12 +150,19 @@ else
 
     // The text box is the source of truth while typing; it only takes the URL value when that
     // changes from outside (back/forward, a shared link, "Clear filters").
-    private string? searchText;
+    private readonly CandidateSearchForm searchForm = new();
+    private EditContext searchContext = default!;
+    private FieldIdentifier SearchField => FieldIdentifier.Create(() => searchForm.Search);
     private BallotSelections? selections;
     private ElementReference searchInput;
     private CandidateFilterState? lastFilter;
 
-    protected override void OnInitialized() => Ballot.Changed += OnBallotChanged;
+    protected override void OnInitialized()
+    {
+        searchContext = new EditContext(searchForm);
+        searchContext.SetFieldCssClassProvider(new BootstrapFieldCssClassProvider());
+        Ballot.Changed += OnBallotChanged;
+    }
 
     private int ChosenFor(int positionId) => selections?.CountFor(positionId) ?? 0;
 
@@ -158,7 +176,7 @@ else
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to refresh voting guide counts for {Slug}", slug);
+            Logger.GuideRefreshFailed(ex, "directory counts", slug);
         }
     }
 
@@ -167,8 +185,11 @@ else
         if (Filter != lastFilter)
         {
             lastFilter = Filter;
-            if ((Filter.Search ?? "") != (searchText ?? ""))
-                searchText = Filter.Search;
+            if ((Filter.Search ?? "") != (searchForm.Search ?? ""))
+            {
+                searchForm.Search = Filter.Search;
+                searchContext.NotifyFieldChanged(SearchField); // clears any old error
+            }
         }
 
         if (Municipality.Slug == loadedSlug) return;
@@ -215,7 +236,7 @@ else
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to load candidates for {Slug}", slug);
+            Logger.CandidatesLoadFailed(ex, slug);
             errorMessage = ex is ApiRequestException
                 ? ex.Message
                 : "We couldn't load the candidates right now. Please try again.";
@@ -225,7 +246,9 @@ else
     /// <summary>Applies the current search text and position filter to the loaded data.</summary>
     private DirectoryView BuildView()
     {
-        var term = string.IsNullOrWhiteSpace(searchText) ? null : searchText.Trim();
+        // While the box holds an invalid search, keep showing results for the last valid one.
+        var text = IsSearchValid ? searchForm.Search : Filter.Search;
+        var term = string.IsNullOrWhiteSpace(text) ? null : text.Trim();
 
         // A position id from the URL that isn't in this municipality is ignored (shows all positions).
         var selected = sections!.FirstOrDefault(s => s.Position.Id == Filter.PositionId)?.Position;
@@ -248,15 +271,25 @@ else
         return new DirectoryView(shown, shown.Sum(s => s.Candidates.Count), term, selected?.Id, selected?.Name);
     }
 
-    private Task OnSearchChangedAsync() =>
-        NotifyAsync(new CandidateFilterState(string.IsNullOrWhiteSpace(searchText) ? null : searchText, Filter.PositionId));
+    private bool IsSearchValid => !searchContext.GetValidationMessages(SearchField).Any();
+
+    private string? ValidSearch => string.IsNullOrWhiteSpace(searchForm.Search) ? null : searchForm.Search;
+
+    private Task OnSearchChangedAsync()
+    {
+        searchContext.NotifyFieldChanged(SearchField); // runs the [StringLength] rule
+        return IsSearchValid
+            ? NotifyAsync(new CandidateFilterState(ValidSearch, Filter.PositionId))
+            : Task.CompletedTask; // invalid: don't put it in the URL or apply it
+    }
 
     private Task OnPositionChangedAsync(int? positionId) =>
-        NotifyAsync(Filter with { Search = string.IsNullOrWhiteSpace(searchText) ? null : searchText, PositionId = positionId });
+        NotifyAsync(Filter with { Search = IsSearchValid ? ValidSearch : Filter.Search, PositionId = positionId });
 
     private async Task ClearFiltersAsync()
     {
-        searchText = null;
+        searchForm.Search = null;
+        searchContext.NotifyFieldChanged(SearchField);
         await NotifyAsync(CandidateFilterState.Empty);
         // The button that was clicked disappears once filters are cleared; keep keyboard focus useful.
         await searchInput.FocusAsync();

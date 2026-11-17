@@ -174,7 +174,7 @@ else
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to load candidate {CandidateId} for {Slug}", id, slug);
+            Logger.CandidateLoadFailed(ex, id, slug);
             errorMessage = ex is ApiRequestException
                 ? ex.Message
                 : "We couldn't load this candidate right now. Please try again.";

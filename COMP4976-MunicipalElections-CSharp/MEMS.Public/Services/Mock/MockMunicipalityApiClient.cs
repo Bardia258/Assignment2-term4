@@ -12,7 +12,7 @@ public sealed class MockMunicipalityApiClient(ILogger<MockMunicipalityApiClient>
     {
         await Task.Delay(SimulatedLatency, cancellationToken);
         var result = MockElectionData.Municipalities.OrderBy(m => m.Name).ToList();
-        logger.LogInformation("Mock API returned {Count} municipalities", result.Count);
+        logger.MockMunicipalitiesReturned(result.Count);
         return result;
     }
 
@@ -21,7 +21,7 @@ public sealed class MockMunicipalityApiClient(ILogger<MockMunicipalityApiClient>
         await Task.Delay(SimulatedLatency, cancellationToken);
         var match = MockElectionData.Municipalities.SingleOrDefault(m => m.Slug == slug);
         if (match is null)
-            logger.LogWarning("Mock API: municipality {Slug} not found", slug);
+            logger.MockMunicipalityNotFound(slug);
         return match;
     }
 }

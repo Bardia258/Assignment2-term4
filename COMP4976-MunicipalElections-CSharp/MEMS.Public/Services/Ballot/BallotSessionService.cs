@@ -96,9 +96,7 @@ public sealed class BallotSessionService(IBrowserSessionStorage storage, ILogger
 
         if (dropped > 0 || !trimmed.SequenceEqual(current.Entries))
         {
-            logger.LogInformation(
-                "Voting guide for {Slug}: removed {Dropped} candidates no longer running and {OverLimit} over a seat limit",
-                municipalitySlug, dropped, running.Count - trimmed.Count);
+            logger.GuideReconciled(municipalitySlug, dropped, running.Count - trimmed.Count);
             await SaveAsync(municipalitySlug, trimmed);
         }
         return dropped;
@@ -147,7 +145,7 @@ public sealed class BallotSessionService(IBrowserSessionStorage storage, ILogger
         catch (JsonException ex)
         {
             // Corrupt or hand-edited value: start fresh rather than break the site.
-            logger.LogWarning(ex, "Discarding unreadable voting guide for {Slug}", slug);
+            logger.GuideUnreadable(ex, slug);
             return BallotSelections.Empty;
         }
     }
@@ -182,7 +180,7 @@ public sealed class BallotSessionService(IBrowserSessionStorage storage, ILogger
     private void MarkNotPersistent(Exception ex)
     {
         if (!IsPersistent) return;
-        logger.LogWarning(ex, "sessionStorage unavailable; the voting guide will only last until the page reloads");
+        logger.SessionStorageUnavailable(ex);
         IsPersistent = false;
         foreach (var slug in cache.Keys.ToList()) Changed?.Invoke(slug);
     }

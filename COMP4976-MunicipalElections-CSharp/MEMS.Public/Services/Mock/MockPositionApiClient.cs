@@ -18,8 +18,7 @@ public sealed class MockPositionApiClient(ILogger<MockPositionApiClient> logger)
             .Where(p => MockTenant.Owns(municipalitySlug, p.MunicipalityId))
             .OrderBy(p => p.Name).ThenBy(p => p.Id)
             .ToList();
-        var count = result.Count;
-        logger.LogInformation("Mock API returned {Count} positions for {Slug}", count, municipalitySlug);
+        logger.MockPositionsReturned(result.Count, municipalitySlug);
         return result;
     }
 }

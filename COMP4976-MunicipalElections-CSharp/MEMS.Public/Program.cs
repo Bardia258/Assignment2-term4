@@ -1,11 +1,16 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.Extensions.Logging;
 using MEMS.Public;
 using MEMS.Public.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
+
+// Log levels per environment come from wwwroot/appsettings.json and appsettings.{Environment}.json
+// (Development: Debug for this app; Production: warnings and errors only). Messages are in Services/Logging/Log.cs.
+builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
 
 builder.Services.AddPublicSiteServices();
 

@@ -28,7 +28,7 @@
         }
         catch (JSException ex)
         {
-            Logger.LogWarning(ex, "window.print() failed");
+            Logger.PrintFailed(ex);
             failed = true;
         }
     }

@@ -17,8 +17,7 @@ public sealed class TenantState(ILogger<TenantState> logger)
     public void SetCurrent(MunicipalityResponse municipality)
     {
         if (Current?.Id == municipality.Id) return;
-        if (logger.IsEnabled(LogLevel.Information))
-            logger.LogInformation("Active municipality changed to {Slug}", municipality.Slug);
+        logger.TenantChanged(municipality.Slug);
         Current = municipality;
         Changed?.Invoke();
     }
@@ -26,7 +25,7 @@ public sealed class TenantState(ILogger<TenantState> logger)
     public void Clear()
     {
         if (Current is null) return;
-        logger.LogInformation("Active municipality cleared");
+        logger.TenantCleared();
         Current = null;
         Changed?.Invoke();
     }
