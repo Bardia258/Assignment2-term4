@@ -1,0 +1,22 @@
+@page "/admin/login"
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
+<PageTitle>Sign in · MEMS Admin</PageTitle>
+<div class="card card-body login-card">
+    <h1 class="h3">Administrator sign in</h1>
+    <p class="text-body-secondary">Use your MEMS username or email. Access is limited to your current assignment.</p>
+    @if (Error is not null) { <div class="alert alert-danger" role="alert">Invalid credentials or account unavailable. Please try again.</div> }
+    @if (SignedOut is not null) { <div class="alert alert-success" role="status">You have signed out.</div> }
+    <form method="post" action="/admin/account/sign-in" data-enhance="false">
+        <AntiforgeryToken />
+        <input type="hidden" name="ReturnUrl" value="@AdminAuthentication.SafeReturnUrl(ReturnUrl)" />
+        <div class="mb-3"><label class="form-label" for="username">Username or email</label><input id="username" name="Username" class="form-control" autocomplete="username" required maxlength="254" /></div>
+        <div class="mb-3"><label class="form-label" for="password">Password</label><input id="password" name="Password" type="password" class="form-control" autocomplete="current-password" required maxlength="128" /></div>
+        <button class="btn btn-primary w-100" type="submit">Sign in</button>
+    </form>
+</div>
+@code {
+    [SupplyParameterFromQuery(Name = "ReturnUrl")] public string? ReturnUrl { get; set; }
+    [SupplyParameterFromQuery(Name = "error")] public string? Error { get; set; }
+    [SupplyParameterFromQuery(Name = "signedOut")] public string? SignedOut { get; set; }
+}

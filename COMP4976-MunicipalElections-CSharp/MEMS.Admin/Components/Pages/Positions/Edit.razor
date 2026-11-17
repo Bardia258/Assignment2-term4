@@ -1,0 +1,44 @@
+@page "/admin/positions/create"
+@page "/admin/positions/{Id:int}/edit"
+@attribute [Authorize(Policy = AdminPolicies.Administrator)]
+@inherits AdminPageBase
+<PageTitle>@(Id.HasValue ? "Edit position" : "Create position") · MEMS Admin</PageTitle>
+<h1>@(Id.HasValue ? "Edit position" : "Create position")</h1>
+<PageStatus Busy="Busy" Error="@Error" />
+@if (_model is not null && _municipalities is not null)
+{
+    <EditForm Model="_model" OnValidSubmit="Save" FormName="position" class="card card-body admin-form">
+        <DataAnnotationsValidator /><ValidationSummary />
+        <fieldset disabled="@(Busy || !InteractiveReady)">
+            <div class="mb-3"><label for="name" class="form-label">Name</label><InputText id="name" class="form-control" @bind-Value="_model.Name" maxlength="100" /><ValidationMessage For="() => _model.Name" /></div>
+            <div class="mb-3"><label for="seats" class="form-label">Available seats</label><InputNumber id="seats" class="form-control" @bind-Value="_model.SeatsAvailable" min="1" /><ValidationMessage For="() => _model.SeatsAvailable" /></div>
+            <div class="mb-3"><label for="municipality" class="form-label">Municipality</label><InputSelect id="municipality" class="form-select" @bind-Value="_model.MunicipalityId" disabled="@(Id.HasValue || _municipalities.Count == 1)">
+                <option value="0">Choose a municipality</option>@foreach (var municipality in _municipalities) { <option value="@municipality.Id">@municipality.Name</option> }
+            </InputSelect><ValidationMessage For="() => _model.MunicipalityId" />
+            @if (Id.HasValue) { <div class="form-text">The municipality is fixed. Create a new position to use another municipality.</div> }</div>
+            <div class="d-flex flex-wrap gap-2"><button type="submit" class="btn btn-primary">@(Busy ? "Saving…" : "Save position")</button><a class="btn btn-outline-secondary" href="/admin/positions">Cancel</a></div>
+        </fieldset>
+    </EditForm>
+}
+@code {
+    [Parameter] public int? Id { get; set; }
+    private PositionRequest? _model;
+    private List<MunicipalityResponse>? _municipalities;
+    private string? _revision;
+    protected override Task OnParametersSetAsync() => Run(async () =>
+    {
+        _model = null; _revision = null; _municipalities = await Data.MunicipalitiesAsync();
+        if (Id.HasValue)
+        {
+            var item = await Data.PositionAsync(Id.Value);
+            _model = new() { Name = item.Name, SeatsAvailable = item.SeatsAvailable, MunicipalityId = item.MunicipalityId };
+            _revision = item.Revision;
+        }
+        else _model = new() { SeatsAvailable = 1, MunicipalityId = _municipalities.Count == 1 ? _municipalities[0].Id : 0 };
+    });
+    private Task Save() => Run(async () =>
+    {
+        var id = await Data.SavePositionAsync(Id, _model!, _revision);
+        Navigation.NavigateTo($"/admin/positions/{id}?saved=true");
+    });
+}

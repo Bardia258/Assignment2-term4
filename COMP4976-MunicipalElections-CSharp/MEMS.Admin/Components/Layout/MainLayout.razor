@@ -1,23 +1,9 @@
-﻿@inherits LayoutComponentBase
-
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
+@inherits LayoutComponentBase
+<a class="visually-hidden-focusable skip-link" href="#main-content">Skip to content</a>
+<div class="admin-shell">
+    <aside class="admin-sidebar"><NavMenu /></aside>
+    <main id="main-content" class="admin-content" tabindex="-1">
+        <AdminErrorBoundary>@Body</AdminErrorBoundary>
     </main>
 </div>
-
-<div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
-</div>
+<div id="blazor-error-ui" data-nosnippet role="alert">The connection or page encountered an error. <a href="/admin">Reload</a><button class="dismiss btn btn-link" aria-label="Dismiss error">×</button></div>

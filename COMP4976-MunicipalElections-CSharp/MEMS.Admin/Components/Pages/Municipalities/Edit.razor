@@ -1,0 +1,47 @@
+@page "/admin/municipalities/create"
+@page "/admin/municipalities/{Id:int}/edit"
+@attribute [Authorize(Policy = AdminPolicies.SuperAdmin)]
+@inherits AdminPageBase
+<PageTitle>@(Id.HasValue ? "Edit municipality" : "Create municipality") · MEMS Admin</PageTitle>
+<h1>@(Id.HasValue ? "Edit municipality" : "Create municipality")</h1>
+<PageStatus Busy="Busy" Error="@Error" />
+@if (Loaded && _model is not null)
+{
+    <EditForm Model="_model" OnValidSubmit="Save" FormName="municipality" class="card card-body admin-form">
+        <DataAnnotationsValidator /><ValidationSummary />
+        <fieldset disabled="@(Busy || !InteractiveReady)">
+            <div class="mb-3"><label for="name" class="form-label">Name</label><InputText id="name" class="form-control" @bind-Value="_model.Name" maxlength="100" /><ValidationMessage For="() => _model.Name" /></div>
+            <div class="mb-3"><label for="slug" class="form-label">Tenant URL slug</label><InputText id="slug" class="form-control" @bind-Value="_model.Slug" maxlength="100" aria-describedby="slug-help" /><div id="slug-help" class="form-text">Unique lowercase letters, numbers, and single hyphens, for example burnaby.</div><ValidationMessage For="() => _model.Slug" /></div>
+            <div class="mb-3"><label for="province" class="form-label">Province</label><InputText id="province" class="form-control" @bind-Value="_model.Province" maxlength="100" /><ValidationMessage For="() => _model.Province" /></div>
+            <div class="mb-3"><label for="election-date" class="form-label">Election date</label><InputDate id="election-date" class="form-control" @bind-Value="_model.ElectionDate" min="2000-01-01" max="2100-12-31" /><ValidationMessage For="() => _model.ElectionDate" /></div>
+            <div class="mb-3"><label for="description" class="form-label">Description</label><InputTextArea id="description" class="form-control" @bind-Value="_model.Description" rows="4" maxlength="2000" /><ValidationMessage For="() => _model.Description" /></div>
+            <ImagePicker Id="logo" Label="Logo" CurrentUrl="@_currentImage" Disabled="Busy" OnSelected="file => _upload = file" />
+            <div class="d-flex flex-wrap gap-2"><button type="submit" class="btn btn-primary">@(Busy ? "Saving…" : "Save municipality")</button><a href="/admin/municipalities" class="btn btn-outline-secondary">Cancel</a></div>
+        </fieldset>
+    </EditForm>
+}
+@code {
+    [Parameter] public int? Id { get; set; }
+    private MunicipalityForm? _model;
+    private string? _revision;
+    private string? _currentImage;
+    private IBrowserFile? _upload;
+    protected override Task OnParametersSetAsync() => Run(async () =>
+    {
+        _model = null; _upload = null; _currentImage = null; _revision = null;
+        Session = await Data.SessionAsync();
+        if (Id.HasValue)
+        {
+            var item = await Data.MunicipalityAsync(Id.Value, requireSuper: true);
+            _model = new() { Name = item.Name, Slug = item.Slug, Province = item.Province,
+                ElectionDate = DateOnly.FromDateTime(item.ElectionDate), Description = item.Description };
+            _revision = item.Revision; _currentImage = item.LogoUrl;
+        }
+        else _model = new() { ElectionDate = DateOnly.FromDateTime(DateTime.Today) };
+    });
+    private Task Save() => Run(async () =>
+    {
+        var id = await Data.SaveMunicipalityAsync(Id, _model!, _revision, _upload);
+        Navigation.NavigateTo($"/admin/municipalities/{id}?saved=true");
+    });
+}

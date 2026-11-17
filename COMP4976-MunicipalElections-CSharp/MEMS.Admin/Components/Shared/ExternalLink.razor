@@ -1,0 +1,6 @@
+@if (Uri.TryCreate(Value, UriKind.Absolute, out var uri) && uri.Scheme is "https" or "http")
+{
+    <a href="@uri.AbsoluteUri" target="_blank" rel="noopener noreferrer">@Value</a>
+}
+else { <span>@(string.IsNullOrWhiteSpace(Value) ? "Not provided" : Value)</span> }
+@code { [Parameter] public string? Value { get; set; } }

@@ -1,0 +1,26 @@
+@page "/admin"
+@attribute [Authorize(Policy = AdminPolicies.Administrator)]
+@inherits AdminPageBase
+<PageTitle>Dashboard · MEMS Admin</PageTitle>
+<h1>Administrative dashboard</h1>
+<p class="text-body-secondary">Municipal Elections Management System</p>
+<PageStatus Busy="Busy" Error="@Error" />
+@if (_counts is not null && Session is not null)
+{
+    <p>Signed in as <strong>@Session.Username</strong> · @(Session.IsSuperAdmin ? "Super Admin — system-wide totals" : "Municipality Administrator — your municipality only")</p>
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-4"><div class="card h-100"><div class="card-body"><h2 class="h6">Municipalities</h2><p class="display-5 mb-0" data-testid="municipality-count">@_counts.Municipalities</p></div></div></div>
+        <div class="col-12 col-sm-4"><div class="card h-100"><div class="card-body"><h2 class="h6">Positions</h2><p class="display-5 mb-0" data-testid="position-count">@_counts.Positions</p></div></div></div>
+        <div class="col-12 col-sm-4"><div class="card h-100"><div class="card-body"><h2 class="h6">Candidates</h2><p class="display-5 mb-0" data-testid="candidate-count">@_counts.Candidates</p></div></div></div>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-outline-primary" href="/admin/municipalities">View municipalities</a>
+        <a class="btn btn-outline-primary" href="/admin/positions">Manage positions</a>
+        <a class="btn btn-primary" href="/admin/candidates">Manage candidates</a>
+    </div>
+}
+@code {
+    private DashboardCounts? _counts;
+    protected override Task OnInitializedAsync() => Run(async () =>
+    { Session = await Data.SessionAsync(); _counts = await Data.DashboardAsync(); });
+}

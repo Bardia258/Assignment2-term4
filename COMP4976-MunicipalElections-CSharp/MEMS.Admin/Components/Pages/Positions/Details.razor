@@ -1,0 +1,32 @@
+@page "/admin/positions/{Id:int}"
+@page "/admin/positions/{Id:int}/delete"
+@attribute [Authorize(Policy = AdminPolicies.Administrator)]
+@inherits AdminPageBase
+<PageTitle>@(DeleteMode ? "Delete position" : "Position details") · MEMS Admin</PageTitle>
+<h1>@(DeleteMode ? "Delete position" : "Position details")</h1>
+<PageStatus Busy="Busy" Error="@Error" Saved="Saved" />
+@if (_item is not null)
+{
+    <dl class="row"><dt class="col-sm-3">Name</dt><dd class="col-sm-9">@_item.Name</dd><dt class="col-sm-3">Municipality</dt><dd class="col-sm-9">@_item.MunicipalityName</dd><dt class="col-sm-3">Available seats</dt><dd class="col-sm-9">@_item.SeatsAvailable</dd></dl>
+    @if (DeleteMode) {
+        <div class="alert alert-warning">Deletion is permanent. Positions with candidates cannot be deleted.</div>
+        <div class="form-check mb-3"><input id="confirm-delete" class="form-check-input" type="checkbox" @bind="_confirmed" /><label class="form-check-label" for="confirm-delete">I confirm deletion of @_item.Name.</label></div>
+        <button class="btn btn-danger" type="button" disabled="@(Busy || !_confirmed)" @onclick="Delete">Delete position</button>
+    } else {
+        <a class="btn btn-primary" href="@($"/admin/positions/{Id}/edit")">Edit position</a><a class="btn btn-outline-danger" href="@($"/admin/positions/{Id}/delete")">Delete</a>
+    }
+    <a class="btn btn-outline-secondary" href="/admin/positions">@(DeleteMode ? "Cancel" : "Back to positions")</a>
+}
+@code {
+    [Parameter] public int Id { get; set; }
+    private PositionResponse? _item;
+    private bool _confirmed;
+    private bool DeleteMode => new Uri(Navigation.Uri).AbsolutePath.EndsWith("/delete", StringComparison.OrdinalIgnoreCase);
+    protected override Task OnParametersSetAsync() => Run(async () => { _item = null; _confirmed = false; _item = await Data.PositionAsync(Id); });
+    private Task Delete() => Run(async () =>
+    {
+        if (!_confirmed) return;
+        await Data.DeletePositionAsync(Id, _item!.Revision);
+        Navigation.NavigateTo("/admin/positions?deleted=true");
+    });
+}

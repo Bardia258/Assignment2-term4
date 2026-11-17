@@ -1,0 +1,9 @@
+<ErrorBoundary @ref="_boundary">
+    <ChildContent>@ChildContent</ChildContent>
+    <ErrorContent><div class="alert alert-danger" role="alert">This page could not be displayed. <a href="/admin">Return to the dashboard</a> or reload.</div></ErrorContent>
+</ErrorBoundary>
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    private ErrorBoundary? _boundary;
+    protected override void OnParametersSet() => _boundary?.Recover();
+}

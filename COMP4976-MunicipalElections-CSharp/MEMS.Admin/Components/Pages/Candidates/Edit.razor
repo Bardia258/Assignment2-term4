@@ -1,0 +1,81 @@
+@page "/admin/candidates/create"
+@page "/admin/candidates/{Id:int}/edit"
+@attribute [Authorize(Policy = AdminPolicies.Administrator)]
+@inherits AdminPageBase
+<PageTitle>@(Id.HasValue ? "Edit candidate" : "Create candidate") · MEMS Admin</PageTitle>
+<h1>@(Id.HasValue ? "Edit candidate" : "Create candidate")</h1>
+<PageStatus Busy="Busy" Error="@Error" />
+@if (_model is not null && _municipalities is not null)
+{
+    <EditForm Model="_model" OnValidSubmit="Save" FormName="candidate" class="card card-body admin-form">
+        <DataAnnotationsValidator /><ValidationSummary />
+        <fieldset disabled="@(Busy || !InteractiveReady)">
+            <div class="mb-3"><label for="name" class="form-label">Name</label><InputText id="name" class="form-control" @bind-Value="_model.Name" maxlength="100" /><ValidationMessage For="() => _model.Name" /></div>
+            <div class="row">
+                <div class="col-12 col-sm-6 mb-3"><label for="municipality" class="form-label">Municipality</label><InputSelect id="municipality" class="form-select" @bind-Value="_model.MunicipalityId" @bind-Value:after="MunicipalityChanged" disabled="@(_municipalities.Count == 1 || _loadingPositions)">
+                    <option value="0">Choose a municipality</option>@foreach (var municipality in _municipalities) { <option value="@municipality.Id">@municipality.Name</option> }
+                </InputSelect><ValidationMessage For="() => _model.MunicipalityId" />
+                @if (Id.HasValue) { <div class="form-text">Only Super Admin can move a candidate to another municipality and its matching position.</div> }</div>
+                <div class="col-12 col-sm-6 mb-3"><label for="position" class="form-label">Position</label><InputSelect id="position" class="form-select" @bind-Value="_model.PositionId" disabled="@(_loadingPositions || _model.MunicipalityId == 0)">
+                    <option value="0">Choose a position</option>@foreach (var position in _positions) { <option value="@position.Id">@position.Name</option> }
+                </InputSelect><ValidationMessage For="() => _model.PositionId" /><div class="form-text" role="status">@(_loadingPositions ? "Loading positions…" : "Only positions in the chosen municipality are available.")</div></div>
+            </div>
+            <div class="mb-3"><label for="profile" class="form-label">Biography</label><InputTextArea id="profile" class="form-control" @bind-Value="_model.Profile" rows="7" maxlength="4000" /><ValidationMessage For="() => _model.Profile" /></div>
+            <div class="row">
+                <div class="col-12 col-md-6 mb-3"><label for="website" class="form-label">Website URL</label><InputText id="website" type="url" class="form-control" @bind-Value="_model.Website" maxlength="2048" placeholder="https://example.com" /><ValidationMessage For="() => _model.Website" /></div>
+                <div class="col-12 col-md-6 mb-3"><label for="email" class="form-label">Email</label><InputText id="email" type="email" class="form-control" @bind-Value="_model.Email" maxlength="254" /><ValidationMessage For="() => _model.Email" /></div>
+            </div>
+            <ImagePicker Id="photo" Label="Photograph" CurrentUrl="@_currentImage" Disabled="Busy" OnSelected="file => _upload = file" />
+            <div class="d-flex flex-wrap gap-2"><button type="submit" class="btn btn-primary" disabled="@_loadingPositions">@(Busy ? "Saving…" : "Save candidate")</button><a class="btn btn-outline-secondary" href="/admin/candidates">Cancel</a></div>
+        </fieldset>
+    </EditForm>
+}
+@code {
+    [Parameter] public int? Id { get; set; }
+    private CandidateRequest? _model;
+    private List<MunicipalityResponse>? _municipalities;
+    private List<PositionResponse> _positions = [];
+    private string? _revision;
+    private string? _currentImage;
+    private IBrowserFile? _upload;
+    private bool _loadingPositions;
+    private int _selectionVersion;
+    protected override Task OnParametersSetAsync() => Run(async () =>
+    {
+        _model = null; _positions = []; _upload = null; _revision = null; _currentImage = null;
+        Session = await Data.SessionAsync();
+        _municipalities = await Data.MunicipalitiesAsync();
+        if (Id.HasValue)
+        {
+            var item = await Data.CandidateAsync(Id.Value);
+            _model = new() { Name = item.Name, Profile = item.Profile, MunicipalityId = item.MunicipalityId,
+                PositionId = item.PositionId, Website = item.Website, Email = item.Email };
+            _revision = item.Revision; _currentImage = item.PhotoUrl;
+        }
+        else _model = new() { MunicipalityId = _municipalities.Count == 1 ? _municipalities[0].Id : 0 };
+        if (_model.MunicipalityId > 0) _positions = await Data.PositionsAsync(_model.MunicipalityId);
+    });
+    private async Task MunicipalityChanged()
+    {
+        if (_model is null) return;
+        var selected = _model.MunicipalityId;
+        var version = ++_selectionVersion;
+        _model.PositionId = 0; _positions = []; _loadingPositions = true;
+        try
+        {
+            if (selected > 0)
+            {
+                var values = await Data.PositionsAsync(selected);
+                if (version == _selectionVersion && selected == _model.MunicipalityId) _positions = values;
+            }
+        }
+        catch { Error = "Positions could not be loaded for this municipality. Please retry."; }
+        finally { if (version == _selectionVersion) _loadingPositions = false; }
+    }
+    private Task Save() => Run(async () =>
+    {
+        if (_loadingPositions) return;
+        var id = await Data.SaveCandidateAsync(Id, _model!, _revision, _upload);
+        Navigation.NavigateTo($"/admin/candidates/{id}?saved=true");
+    });
+}

@@ -1,0 +1,45 @@
+@page "/admin/candidates"
+@attribute [Authorize(Policy = AdminPolicies.Administrator)]
+@inherits AdminPageBase
+<PageTitle>Candidates · MEMS Admin</PageTitle>
+<div class="page-heading"><h1>Candidates</h1><a class="btn btn-primary" href="/admin/candidates/create">Create candidate</a></div>
+<PageStatus Busy="Busy" Error="@Error" Deleted="Deleted" />
+@if (_municipalities is not null)
+{
+    <form method="get" action="/admin/candidates" class="row g-2 mb-4" data-enhance="false">
+        <div class="col-12 col-md-4"><label for="search" class="form-label">Candidate name</label><input id="search" name="name" class="form-control" value="@Name" maxlength="100" placeholder="Search candidate names" /></div>
+        <div class="col-12 col-md-3"><label for="municipality-filter" class="form-label">Municipality</label><select id="municipality-filter" name="municipalityId" class="form-select"><option value="">All permitted municipalities</option>
+            @foreach (var item in _municipalities) { <option value="@item.Id" selected="@(MunicipalityId == item.Id)">@item.Name</option> }
+        </select></div>
+        <div class="col-12 col-md-3"><label for="position-filter" class="form-label">Position</label><select id="position-filter" name="positionId" class="form-select"><option value="">All permitted positions</option>
+            @foreach (var item in _positions) { <option value="@item.Id" selected="@(PositionId == item.Id)">@item.Name — @item.MunicipalityName</option> }
+        </select></div>
+        <div class="col-12 col-md-2 d-flex align-items-end gap-1"><button class="btn btn-outline-primary" type="submit">Filter</button><a class="btn btn-outline-secondary" href="/admin/candidates">Clear</a></div>
+    </form>
+}
+@if (_items is not null)
+{
+    <div class="table-responsive"><table class="table table-hover align-middle"><caption class="visually-hidden">Candidates in your permitted municipalities</caption><thead><tr><th>Photograph</th><th>Name</th><th>Municipality</th><th>Position</th><th>Contact</th><th>Actions</th></tr></thead><tbody>
+    @foreach (var item in _items)
+    {
+        <tr><td>@if (item.PhotoUrl is not null) { <img class="admin-thumb" src="@item.PhotoUrl" alt="@($"Photograph of {item.Name}")" /> } else { <span class="text-body-secondary">No photo</span> }</td><td>@item.Name</td><td>@item.MunicipalityName</td><td>@item.PositionTitle</td><td class="text-break">@item.Email<br /><ExternalLink Value="@item.Website" /></td>
+        <td class="actions"><a class="btn btn-sm btn-outline-secondary" href="@($"/admin/candidates/{item.Id}")">Details</a><a class="btn btn-sm btn-outline-primary" href="@($"/admin/candidates/{item.Id}/edit")">Edit</a><a class="btn btn-sm btn-outline-danger" href="@($"/admin/candidates/{item.Id}/delete")">Delete</a></td></tr>
+    }
+    </tbody></table></div>
+    @if (_items.Count == 0) { <p role="status">No candidates match these filters.</p> }
+}
+@code {
+    [SupplyParameterFromQuery] public int? MunicipalityId { get; set; }
+    [SupplyParameterFromQuery] public int? PositionId { get; set; }
+    [SupplyParameterFromQuery] public string? Name { get; set; }
+    private List<CandidateResponse>? _items;
+    private List<MunicipalityResponse>? _municipalities;
+    private List<PositionResponse> _positions = [];
+    protected override Task OnParametersSetAsync() => Run(async () =>
+    {
+        _items = null; _municipalities = null;
+        _municipalities = await Data.MunicipalitiesAsync();
+        _positions = await Data.PositionsAsync(MunicipalityId);
+        _items = await Data.CandidatesAsync(MunicipalityId, PositionId, Name);
+    });
+}

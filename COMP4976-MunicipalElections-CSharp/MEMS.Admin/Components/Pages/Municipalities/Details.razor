@@ -1,0 +1,38 @@
+@page "/admin/municipalities/{Id:int}"
+@page "/admin/municipalities/{Id:int}/delete"
+@attribute [Authorize(Policy = AdminPolicies.Administrator)]
+@inherits AdminPageBase
+<PageTitle>@(DeleteMode ? "Delete municipality" : "Municipality details") · MEMS Admin</PageTitle>
+<h1>@(DeleteMode ? "Delete municipality" : "Municipality details")</h1>
+<PageStatus Busy="Busy" Error="@Error" Saved="Saved" />
+@if (_item is not null)
+{
+    @if (_item.LogoUrl is not null) { <img class="admin-preview mb-3" src="@_item.LogoUrl" alt="@($"Logo for {_item.Name}")" /> }
+    <dl class="row"><dt class="col-sm-3">Name</dt><dd class="col-sm-9">@_item.Name</dd><dt class="col-sm-3">Slug</dt><dd class="col-sm-9">@_item.Slug</dd><dt class="col-sm-3">Province</dt><dd class="col-sm-9">@_item.Province</dd><dt class="col-sm-3">Election date</dt><dd class="col-sm-9">@_item.ElectionDate.ToString("yyyy-MM-dd")</dd><dt class="col-sm-3">Description</dt><dd class="col-sm-9 biography">@_item.Description</dd></dl>
+    @if (DeleteMode)
+    {
+        <div class="alert alert-warning">Deletion is permanent. Positions, candidates, and administrator assignments must be removed or reassigned first.</div>
+        <div class="form-check mb-3"><input id="confirm-delete" class="form-check-input" type="checkbox" @bind="_confirmed" /><label class="form-check-label" for="confirm-delete">I confirm deletion of @_item.Name.</label></div>
+        <button type="button" class="btn btn-danger" disabled="@(Busy || !_confirmed)" @onclick="Delete">Delete municipality</button>
+    }
+    else if (Session?.IsSuperAdmin == true)
+    {
+        <a class="btn btn-primary" href="@($"/admin/municipalities/{Id}/edit")">Edit municipality</a>
+        <a class="btn btn-outline-danger" href="@($"/admin/municipalities/{Id}/delete")">Delete</a>
+    }
+    <a class="btn btn-outline-secondary" href="/admin/municipalities">@(DeleteMode ? "Cancel" : "Back to municipalities")</a>
+}
+@code {
+    [Parameter] public int Id { get; set; }
+    private MunicipalityResponse? _item;
+    private bool _confirmed;
+    private bool DeleteMode => new Uri(Navigation.Uri).AbsolutePath.EndsWith("/delete", StringComparison.OrdinalIgnoreCase);
+    protected override Task OnParametersSetAsync() => Run(async () =>
+    { _item = null; _confirmed = false; Session = await Data.SessionAsync(); _item = await Data.MunicipalityAsync(Id, DeleteMode); });
+    private Task Delete() => Run(async () =>
+    {
+        if (!_confirmed) return;
+        await Data.DeleteMunicipalityAsync(Id, _item!.Revision);
+        Navigation.NavigateTo("/admin/municipalities?deleted=true");
+    });
+}

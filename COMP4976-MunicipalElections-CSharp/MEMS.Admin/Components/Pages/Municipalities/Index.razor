@@ -1,0 +1,23 @@
+@page "/admin/municipalities"
+@attribute [Authorize(Policy = AdminPolicies.Administrator)]
+@inherits AdminPageBase
+<PageTitle>Municipalities · MEMS Admin</PageTitle>
+<div class="page-heading"><h1>Municipalities</h1>@if (Session?.IsSuperAdmin == true) { <a class="btn btn-primary" href="/admin/municipalities/create">Create municipality</a> }</div>
+<PageStatus Busy="Busy" Error="@Error" Deleted="Deleted" />
+@if (_items is not null)
+{
+    @if (Session?.IsSuperAdmin == false) { <p class="text-body-secondary">Your municipality's settings are shown for reference. Only Super Admin can change tenant settings.</p> }
+    <div class="table-responsive"><table class="table table-hover align-middle"><caption class="visually-hidden">Permitted municipalities</caption>
+        <thead><tr><th>Name</th><th>Slug</th><th>Province</th><th>Election date</th><th>Actions</th></tr></thead>
+        <tbody>@foreach (var item in _items) {
+            <tr><td>@if (item.LogoUrl is not null) { <img class="admin-thumb me-2" src="@item.LogoUrl" alt="" /> }@item.Name</td><td><code>@item.Slug</code></td><td>@item.Province</td><td>@item.ElectionDate.ToString("yyyy-MM-dd")</td>
+            <td class="actions"><a class="btn btn-sm btn-outline-secondary" href="@($"/admin/municipalities/{item.Id}")">Details</a>
+            @if (Session?.IsSuperAdmin == true) { <a class="btn btn-sm btn-outline-primary" href="@($"/admin/municipalities/{item.Id}/edit")">Edit</a><a class="btn btn-sm btn-outline-danger" href="@($"/admin/municipalities/{item.Id}/delete")">Delete</a> }</td></tr>
+        }</tbody>
+    </table></div>
+    @if (_items.Count == 0) { <p role="status">No municipalities are available.</p> }
+}
+@code {
+    private List<MunicipalityResponse>? _items;
+    protected override Task OnInitializedAsync() => Run(async () => { Session = await Data.SessionAsync(); _items = await Data.MunicipalitiesAsync(); });
+}

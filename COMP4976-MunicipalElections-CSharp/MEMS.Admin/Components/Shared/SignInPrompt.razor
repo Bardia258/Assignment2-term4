@@ -1,0 +1,10 @@
+<div class="alert alert-warning" role="alert">
+    <h1 class="h4">Administrator access required</h1>
+    <p>Sign in with an active administrator account to continue.</p>
+    <a class="btn btn-primary" href="@LoginUrl">Sign in</a>
+</div>
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+    private string LoginUrl => "/admin/login?ReturnUrl=" + Uri.EscapeDataString(
+        AdminAuthentication.SafeReturnUrl("/" + Navigation.ToBaseRelativePath(Navigation.Uri)));
+}

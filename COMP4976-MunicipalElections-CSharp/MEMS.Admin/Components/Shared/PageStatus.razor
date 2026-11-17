@@ -1,0 +1,18 @@
+@if (Busy)
+{
+    <div class="alert alert-info d-flex align-items-center gap-2" role="status" aria-live="polite">
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Please wait…
+    </div>
+}
+@if (!string.IsNullOrEmpty(Error))
+{
+    <div class="alert alert-danger" role="alert">@Error <a href="/admin/login">Sign in</a> or reload the page.</div>
+}
+@if (Saved) { <div class="alert alert-success" role="status">Changes saved successfully.</div> }
+@if (Deleted) { <div class="alert alert-success" role="status">Record deleted successfully.</div> }
+@code {
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public bool Saved { get; set; }
+    [Parameter] public bool Deleted { get; set; }
+}

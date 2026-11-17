@@ -1,0 +1,19 @@
+@page "/admin/positions"
+@attribute [Authorize(Policy = AdminPolicies.Administrator)]
+@inherits AdminPageBase
+<PageTitle>Positions · MEMS Admin</PageTitle>
+<div class="page-heading"><h1>Positions</h1><a class="btn btn-primary" href="/admin/positions/create">Create position</a></div>
+<PageStatus Busy="Busy" Error="@Error" Deleted="Deleted" />
+@if (_items is not null)
+{
+    <div class="table-responsive"><table class="table table-hover"><caption class="visually-hidden">Positions in your permitted municipalities</caption><thead><tr><th>Name</th><th>Municipality</th><th>Available seats</th><th>Actions</th></tr></thead><tbody>
+    @foreach (var item in _items) {
+        <tr><td>@item.Name</td><td>@item.MunicipalityName</td><td>@item.SeatsAvailable</td><td class="actions"><a class="btn btn-sm btn-outline-secondary" href="@($"/admin/positions/{item.Id}")">Details</a><a class="btn btn-sm btn-outline-primary" href="@($"/admin/positions/{item.Id}/edit")">Edit</a><a class="btn btn-sm btn-outline-danger" href="@($"/admin/positions/{item.Id}/delete")">Delete</a></td></tr>
+    }
+    </tbody></table></div>
+    @if (_items.Count == 0) { <p role="status">No positions yet. Create a position in an authorized municipality.</p> }
+}
+@code {
+    private List<PositionResponse>? _items;
+    protected override Task OnInitializedAsync() => Run(async () => { _items = await Data.PositionsAsync(); });
+}

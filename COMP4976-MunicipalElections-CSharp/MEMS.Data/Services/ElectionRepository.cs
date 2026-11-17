@@ -146,8 +146,10 @@ public sealed class ElectionRepository(ApplicationDbContext db)
         scope.Demand(input.MunicipalityId);
         var stored = await Candidates(scope).SingleOrDefaultAsync(c => c.CandidateId == input.CandidateId, ct);
         if (stored is null) return false;
-        if (stored.MunicipalityId != input.MunicipalityId) throw new ValidationException("A candidate cannot move between municipalities.");
-        await DemandPositionAsync(input.PositionId, stored.MunicipalityId, ct);
+        if (stored.MunicipalityId != input.MunicipalityId && !scope.IsSuperAdmin)
+            throw new UnauthorizedAccessException("Moving candidates between municipalities requires Super Admin access.");
+        await DemandPositionAsync(input.PositionId, input.MunicipalityId, ct);
+        stored.MunicipalityId = input.MunicipalityId;
         CopyCandidate(input, stored);
         db.Entry(stored).Property(c => c.Revision).OriginalValue = input.Revision;
         await db.SaveChangesAsync(ct);
