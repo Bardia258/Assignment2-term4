@@ -1,0 +1,165 @@
+@*
+    Full profile for one candidate. The lookup is scoped to the given municipality, so an id
+    belonging to another municipality shows "Candidate not found".
+*@
+@implements IDisposable
+@using MEMS.Public.Services
+@using MEMS.Public.Services.Api
+@inject ICandidateApiClient CandidateApi
+@inject ILogger<CandidateProfile> Logger
+
+<nav aria-label="breadcrumb" class="d-print-none">
+    <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="@Municipality.Slug">@Municipality.Name</a></li>
+        <li class="breadcrumb-item"><a href="@CandidatesHref">Candidates</a></li>
+        @if (candidate is not null)
+        {
+            <li class="breadcrumb-item active" aria-current="page">@candidate.Name</li>
+        }
+    </ol>
+</nav>
+
+@if (errorMessage is not null)
+{
+    <PageTitle>Candidate · @Municipality.Name</PageTitle>
+    <ErrorAlert Message="@errorMessage" OnRetry="ReloadAsync" />
+}
+else if (loading)
+{
+    <PageTitle>Candidate · @Municipality.Name</PageTitle>
+    <LoadingSpinner Message="Loading candidate…" />
+}
+else if (candidate is null)
+{
+    <PageTitle>Candidate not found · @Municipality.Name</PageTitle>
+    <div class="text-center py-5">
+        <h1 class="h2">Candidate not found</h1>
+        <p class="lead text-secondary">This candidate isn't running in @(Municipality.Name), or their profile is no longer available.</p>
+        <a class="btn btn-primary" href="@CandidatesHref">See all @Municipality.Name candidates</a>
+    </div>
+}
+else
+{
+    var website = SafeLinks.HttpUrl(candidate.Website);
+    var mailTo = SafeLinks.MailTo(candidate.Email);
+
+    <PageTitle>@candidate.Name · @Municipality.Name</PageTitle>
+
+    <article class="row g-4">
+        <div class="col-12 col-md-auto text-center text-md-start">
+            <CandidateAvatar Name="@candidate.Name" PhotoUrl="@candidate.PhotoUrl" Size="160" />
+        </div>
+        <div class="col">
+            <p class="text-uppercase text-secondary small mb-1">
+                Candidate for @candidate.PositionTitle · @Municipality.Name
+            </p>
+            <h1>@candidate.Name</h1>
+
+            <h2 class="h5 mt-4">About</h2>
+            @if (string.IsNullOrWhiteSpace(candidate.Profile))
+            {
+                <p class="text-secondary">This candidate hasn't provided a profile yet.</p>
+            }
+            else
+            {
+                <p class="mw-prose candidate-profile">@candidate.Profile</p>
+            }
+
+            @if (website is not null || mailTo is not null)
+            {
+                <h2 class="h5 mt-4">Contact</h2>
+                <ul class="list-unstyled">
+                    @if (website is not null)
+                    {
+                        <li class="mb-1">
+                            <span class="text-secondary">Website:</span>
+                            <a href="@website.AbsoluteUri" target="_blank" rel="noopener noreferrer nofollow">
+                                @SafeLinks.DisplayText(website)<span class="visually-hidden"> (opens in a new tab)</span>
+                            </a>
+                        </li>
+                    }
+                    @if (mailTo is not null)
+                    {
+                        <li class="mb-1">
+                            <span class="text-secondary">Email:</span>
+                            <a href="@mailTo">@candidate.Email!.Trim()</a>
+                        </li>
+                    }
+                </ul>
+            }
+
+            <a class="btn btn-outline-primary mt-3 d-print-none" href="@CandidatesHref">
+                ← Back to all candidates
+            </a>
+        </div>
+    </article>
+}
+
+@code {
+    [Parameter, EditorRequired] public MunicipalityResponse Municipality { get; set; } = default!;
+    [Parameter, EditorRequired] public int CandidateId { get; set; }
+
+    private CandidateResponse? candidate;
+    private bool loading = true;
+    private string? errorMessage;
+    private (string Slug, int Id)? loadedKey;
+    private CancellationTokenSource? cts;
+
+    private string CandidatesHref => $"{Municipality.Slug}/candidates";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (loadedKey == (Municipality.Slug, CandidateId)) return;
+        await LoadAsync();
+    }
+
+    private Task ReloadAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var slug = Municipality.Slug;
+        var id = CandidateId;
+        loadedKey = (slug, id);
+        candidate = null;
+        errorMessage = null;
+        loading = true;
+
+        // Ids start at 1; anything else can't exist, so skip the request (the API would reject it with 400).
+        if (id < 1)
+        {
+            loading = false;
+            return;
+        }
+
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = new CancellationTokenSource();
+        var token = cts.Token;
+
+        try
+        {
+            var result = await CandidateApi.GetCandidateAsync(slug, id, token);
+            if (token.IsCancellationRequested) return;
+            candidate = result;
+            loading = false;
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            // Superseded by a newer load or the component was disposed.
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load candidate {CandidateId} for {Slug}", id, slug);
+            errorMessage = ex is ApiRequestException
+                ? ex.Message
+                : "We couldn't load this candidate right now. Please try again.";
+            loading = false;
+        }
+    }
+
+    public void Dispose()
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+    }
+}

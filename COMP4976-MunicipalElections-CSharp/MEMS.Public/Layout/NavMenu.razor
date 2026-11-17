@@ -21,7 +21,10 @@
                     <li class="nav-item">
                         <NavLink class="nav-link" href="@m.Slug" Match="NavLinkMatch.All">Overview</NavLink>
                     </li>
-                    @* Candidates and Voting guide links are added in Phases 2 and 4. *@
+                    <li class="nav-item">
+                        <NavLink class="nav-link" href="@($"{m.Slug}/candidates")" Match="NavLinkMatch.Prefix">Candidates</NavLink>
+                    </li>
+                    @* Voting guide link is added in Phase 4. *@
                 </ul>
                 <ul class="navbar-nav">
                     <li class="nav-item">

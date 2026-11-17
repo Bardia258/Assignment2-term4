@@ -1,0 +1,23 @@
+@page "/{Tenant}/candidates"
+
+<TenantGuard Tenant="@Tenant" Context="municipality">
+    <PageTitle>Candidates · @municipality.Name</PageTitle>
+
+    <section class="py-3">
+        <p class="text-uppercase text-secondary small mb-1">
+            @municipality.Name · Election day @municipality.ElectionDate.ToString("MMM d, yyyy")
+        </p>
+        <h1>Candidates</h1>
+        <p class="lead mw-prose">
+            Everyone running for each position on the @municipality.Name ballot.
+            Select a candidate to read their full profile.
+        </p>
+    </section>
+
+    @* Search and position filtering are added in Phase 3. *@
+    <CandidateDirectory Municipality="municipality" />
+</TenantGuard>
+
+@code {
+    [Parameter] public string Tenant { get; set; } = "";
+}

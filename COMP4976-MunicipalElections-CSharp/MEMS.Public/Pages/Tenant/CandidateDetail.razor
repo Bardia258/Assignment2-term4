@@ -1,0 +1,10 @@
+@page "/{Tenant}/candidates/{Id:int}"
+
+<TenantGuard Tenant="@Tenant" Context="municipality">
+    <CandidateProfile Municipality="municipality" CandidateId="Id" />
+</TenantGuard>
+
+@code {
+    [Parameter] public string Tenant { get; set; } = "";
+    [Parameter] public int Id { get; set; }
+}

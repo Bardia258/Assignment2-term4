@@ -1,0 +1,119 @@
+@*
+    Every position on the ballot for one municipality, each with its candidates.
+    Loads positions and candidates in parallel, scoped to the given municipality only.
+*@
+@implements IDisposable
+@using MEMS.Public.Services.Api
+@inject IPositionApiClient PositionApi
+@inject ICandidateApiClient CandidateApi
+@inject ILogger<CandidateDirectory> Logger
+
+@if (errorMessage is not null)
+{
+    <ErrorAlert Message="@errorMessage" OnRetry="ReloadAsync" />
+}
+else if (sections is null)
+{
+    <LoadingSpinner Message="Loading candidates…" />
+}
+else if (sections.Count == 0)
+{
+    <div class="alert alert-info">
+        No positions have been announced for this election yet. Please check back later.
+    </div>
+}
+else
+{
+    @foreach (var section in sections)
+    {
+        <section class="mb-4" aria-labelledby="position-@section.Position.Id">
+            <div class="d-flex flex-wrap align-items-baseline gap-2 border-bottom pb-2 mb-3">
+                <h2 class="h4 mb-0" id="position-@section.Position.Id">@section.Position.Name</h2>
+                <span class="badge text-bg-light border">@SeatsText(section.Position.SeatsAvailable)</span>
+                <span class="text-secondary small ms-auto">@CandidateCountText(section.Candidates.Count)</span>
+            </div>
+
+            @if (section.Candidates.Count == 0)
+            {
+                <p class="text-secondary">No candidates have registered for this position yet.</p>
+            }
+            else
+            {
+                <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+                    @foreach (var candidate in section.Candidates)
+                    {
+                        <div class="col" @key="candidate.Id">
+                            <CandidateCard Candidate="candidate" />
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public MunicipalityResponse Municipality { get; set; } = default!;
+
+    private sealed record PositionSection(PositionResponse Position, IReadOnlyList<CandidateResponse> Candidates);
+
+    private IReadOnlyList<PositionSection>? sections;
+    private string? errorMessage;
+    private string? loadedSlug;
+    private CancellationTokenSource? cts;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Municipality.Slug == loadedSlug) return;
+        await LoadAsync();
+    }
+
+    private Task ReloadAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var slug = Municipality.Slug;
+        loadedSlug = slug;
+        sections = null;
+        errorMessage = null;
+
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = new CancellationTokenSource();
+        var token = cts.Token;
+
+        try
+        {
+            var positionsTask = PositionApi.GetPositionsAsync(slug, token);
+            var candidatesTask = CandidateApi.GetCandidatesAsync(new CandidateQuery { MunicipalitySlug = slug }, token);
+            await Task.WhenAll(positionsTask, candidatesTask);
+            if (token.IsCancellationRequested) return;
+
+            var byPosition = candidatesTask.Result.ToLookup(c => c.PositionId);
+            sections = positionsTask.Result
+                .Select(p => new PositionSection(p, byPosition[p.Id].ToList()))
+                .ToList();
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            // Superseded by a newer load or the component was disposed.
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load candidates for {Slug}", slug);
+            errorMessage = ex is ApiRequestException
+                ? ex.Message
+                : "We couldn't load the candidates right now. Please try again.";
+        }
+    }
+
+    private static string SeatsText(int seats) => seats == 1 ? "Vote for 1" : $"Vote for up to {seats}";
+
+    private static string CandidateCountText(int count) => count == 1 ? "1 candidate" : $"{count} candidates";
+
+    public void Dispose()
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+    }
+}

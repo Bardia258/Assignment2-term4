@@ -13,9 +13,10 @@
         {
             <p class="mw-prose">@municipality.Description</p>
         }
+        <a class="btn btn-primary btn-lg mt-2" href="@($"{municipality.Slug}/candidates")">Browse candidates</a>
     </section>
 
-    @* Candidate browsing (Phase 2) and the voting guide (Phase 4) are linked from here once built. *@
+    @* The voting guide (Phase 4) is linked from here once built. *@
 </TenantGuard>
 
 @code {
