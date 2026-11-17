@@ -127,3 +127,43 @@ code {
         box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .12);
         transform: translateY(-2px);
     }
+
+.min-w-0 {
+    min-width: 0;
+}
+
+.text-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Candidates */
+.candidate-card {
+    transition: box-shadow .15s ease-in-out;
+}
+
+    .candidate-card:hover,
+    .candidate-card:focus-within {
+        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .12);
+    }
+
+.candidate-avatar {
+    object-fit: cover;
+}
+
+.candidate-avatar-initials {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: var(--bs-primary-text-emphasis);
+    background-color: var(--bs-primary-bg-subtle);
+}
+
+/* Keep the paragraph breaks candidates type into their profile. */
+.candidate-profile {
+    white-space: pre-line;
+}
