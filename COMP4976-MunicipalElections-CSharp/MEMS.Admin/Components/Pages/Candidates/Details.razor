@@ -11,8 +11,8 @@
     <dl class="row"><dt class="col-sm-3">Name</dt><dd class="col-sm-9">@_item.Name</dd><dt class="col-sm-3">Municipality</dt><dd class="col-sm-9">@_item.MunicipalityName</dd><dt class="col-sm-3">Position</dt><dd class="col-sm-9">@_item.PositionTitle</dd><dt class="col-sm-3">Biography</dt><dd class="col-sm-9 biography">@_item.Profile</dd><dt class="col-sm-3">Website</dt><dd class="col-sm-9 text-break"><ExternalLink Value="@_item.Website" /></dd><dt class="col-sm-3">Email</dt><dd class="col-sm-9 text-break">@(_item.Email ?? "Not provided")</dd><dt class="col-sm-3">Created (UTC)</dt><dd class="col-sm-9">@_item.DateCreated.ToString("yyyy-MM-dd HH:mm")</dd></dl>
     @if (DeleteMode) {
         <div class="alert alert-warning">Deletion is permanent and also removes dependent saved-candidate links. This cannot be undone.</div>
-        <div class="form-check mb-3"><input id="confirm-delete" class="form-check-input" type="checkbox" @bind="_confirmed" /><label class="form-check-label" for="confirm-delete">I confirm deletion of @_item.Name.</label></div>
-        <button class="btn btn-danger" type="button" disabled="@(Busy || !_confirmed)" @onclick="Delete">Delete candidate</button>
+        <div class="form-check mb-3"><input id="confirm-delete" class="form-check-input" type="checkbox" @bind="_confirmed" disabled="@(Busy || !InteractiveReady)" /><label class="form-check-label" for="confirm-delete">I confirm deletion of @_item.Name.</label></div>
+        <button class="btn btn-danger" type="button" disabled="@(Busy || !InteractiveReady || !_confirmed)" @onclick="Delete">Delete candidate</button>
     } else {
         <a class="btn btn-primary" href="@($"/admin/candidates/{Id}/edit")">Edit candidate</a><a class="btn btn-outline-danger" href="@($"/admin/candidates/{Id}/delete")">Delete</a>
     }

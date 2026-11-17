@@ -8,6 +8,21 @@ namespace MEMS.Api.Tests;
 
 public sealed class AdminApiTests
 {
+    [Theory]
+    [InlineData("1999-12-31")]
+    [InlineData("2101-01-01")]
+    public async Task ApiEnforcesTheOriginalAdministrativeElectionDateRange(string date)
+    {
+        await using var factory = new MemsFactory();
+        using var client = await factory.LoginAsync("Super");
+        var response = await client.PostAsJsonAsync("/api/municipalities", new MunicipalityRequest
+        {
+            Name = "Invalid election date", Slug = "invalid-date", Province = "BC", ElectionDate = DateOnly.Parse(date)
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("2000 and 2100", await response.Content.ReadAsStringAsync());
+    }
+
     private static CandidateRequest Candidate(int municipalityId, int positionId) => new()
     {
         Name = "HTTP test candidate", Profile = "A test candidate profile.",

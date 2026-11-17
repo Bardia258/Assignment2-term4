@@ -25,6 +25,11 @@ Apply the existing migration and provision development accounts using
 does not create, migrate, or seed the database on startup. Use the same new MEMS
 database as `MEMS.Api`, never the original SQLite database.
 
+For the completed local orchestration, use the
+[Assignment 2 backend report](../docs/ASSIGNMENT2-BACKEND.md). AppHost supplies
+the SQL connection, waits for the API's development migration startup, and sets
+the API image origin to this Admin host automatically.
+
 ## Pages and behavior
 
 | Route | Function |
@@ -90,10 +95,10 @@ references are checked before cleanup. Public election images are served at
 `/uploads/logos/{generated-name}` and `/uploads/candidates/{generated-name}` with
 `nosniff`. Keep backups of the upload directory together with database backups.
 
-The API's existing `Images:BaseUrl` can later point at the externally
-reachable Admin origin so public API DTOs resolve these same image paths. The
-Aspire/public hosting configuration is left for Task 4. Existing Assignment 1
-image files are not copied or modified.
+The API's `Images:BaseUrl` points at the Admin HTTPS origin when orchestrated by
+AppHost, so public API DTOs resolve these image paths. Configure it explicitly
+for other hosting arrangements. Existing Assignment 1 image files are not copied
+or modified; the partner's public UI integration remains separate.
 
 ## Verification
 
@@ -116,5 +121,6 @@ For service/HTTP tests without a browser, use
 InMemory tests verify application behavior, not SQL Server transactions or SQL
 constraints. The existing SQL Server integration check in `MEMS.Data.Tests`
 requires an explicitly configured disposable database as described in its
-README. A live SQL Server/Azure deployment and the final Aspire integration
-must be verified separately; this milestone does not change the AppHost.
+README. Task 4 adds an opt-in live Aspire/Admin/SQL/API test; the consolidated
+backend report distinguishes its results from Azure deployment and public UI
+checks. The unconfigured live test is explicitly skipped.

@@ -15,4 +15,8 @@
     <ProjectReference Include="..\MEMS.Public\MEMS.Public.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.SqlServer" Version="13.6.5" />
+  </ItemGroup>
+
 </Project>

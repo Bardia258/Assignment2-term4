@@ -2,12 +2,14 @@ using MEMS.Admin.Components;
 using MEMS.Admin.Security;
 using MEMS.Admin.Services;
 using MEMS.Data.Configuration;
+using MEMS.Data;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 builder.Services.AddMemsData(builder.Configuration);
+builder.EnrichSqlServerDbContext<ApplicationDbContext>();
 builder.Services.AddAdminAuthentication();
 builder.Services.AddDataProtection().SetApplicationName("MEMS.Admin");
 builder.Services.AddScoped<AdminDataService>();
@@ -17,10 +19,14 @@ var app = builder.Build();
 app.UseExceptionHandler("/admin/error", createScopeForErrors: true);
 if (!app.Environment.IsDevelopment()) app.UseHsts();
 app.UseStatusCodePagesWithReExecute("/admin/not-found", createScopeForStatusCodePages: true);
-app.UseHttpsRedirection();
+app.UseWhen(c => c.Request.Path != "/health" && c.Request.Path != "/alive", b => b.UseHttpsRedirection());
 app.Use(async (context, next) =>
 {
-    if (context.Request.Path.StartsWithSegments("/admin")) context.Response.Headers.CacheControl = "no-store";
+    if (context.Request.Path.StartsWithSegments("/admin"))
+    {
+        context.Response.Headers.CacheControl = "no-cache, no-store";
+        context.Response.Headers.Pragma = "no-cache";
+    }
     await next();
 });
 var images = app.Services.GetRequiredService<AdminImageStore>();

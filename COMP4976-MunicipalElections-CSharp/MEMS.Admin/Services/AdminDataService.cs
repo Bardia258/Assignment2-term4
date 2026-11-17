@@ -5,6 +5,7 @@ using MEMS.Data;
 using MEMS.Data.Entities;
 using MEMS.Data.Services;
 using MEMS.Data.Tenancy;
+using MEMS.Data.Observability;
 using MEMS.Shared.Contracts;
 using MEMS.Shared.Tenancy;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -23,6 +24,7 @@ public sealed class AdminDataService(AuthenticationStateProvider authentication,
     private async Task<T> RunAsync<T>(Func<Operation, Task<T>> operation, bool superOnly = false,
         int? municipalityId = null, bool allowSuperTransfer = false)
     {
+        using var activity = DataTelemetry.Source.StartActivity("admin.data-operation");
         var principal = (await authentication.GetAuthenticationStateAsync()).User;
         await using var scope = scopes.CreateAsyncScope();
         var session = await validator.ValidateInScopeAsync(principal, scope.ServiceProvider)

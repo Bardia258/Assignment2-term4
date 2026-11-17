@@ -16,7 +16,11 @@ Apply the Task 1 migrations and optional development seed using the instructions
 in [the data README](../MEMS.Data/README.md). EF's design-time factory reads the
 Data project's user secrets; runtime reads the API project's user secrets.
 An environment connection setting can configure both. No migrations or seed
-accounts run automatically when the API starts.
+accounts run automatically when the API starts standalone. Task 4's AppHost
+explicitly enables `Mems:Database:Initialize` in local run mode: the API applies
+migrations before serving requests; optional development seeding uses AppHost
+secret parameters. Initialization is refused outside Development. See the
+[backend report](../docs/ASSIGNMENT2-BACKEND.md) for orchestration and final results.
 
 Use HTTPS; the template HTTPS endpoint is https://localhost:7249. Cookie and CSRF
 security is not relaxed for HTTP. Production should terminate HTTPS correctly
@@ -31,7 +35,8 @@ Optional settings:
 - Images:BaseUrl: optional trusted asset origin, e.g. https://assets.example.com.
   Otherwise image references are relative /uploads/logos/{filename} and
   /uploads/candidates/{filename}. Hosting existing assets is an operator concern;
-  this milestone does not implement uploads or migrate image files.
+  Admin now hosts validated image uploads; Aspire configures this origin from
+  the Admin HTTPS endpoint. Existing Assignment 1 image files are not migrated.
 - OpenApi:Enabled: enables /openapi/v1.json outside Development. The document
   is enabled in Development automatically.
 
@@ -88,7 +93,8 @@ Browser cookies do not automatically accompany a server-side HttpClient call.
 Never share one CookieContainer across different administrators. Same-site,
 cross-origin browser calls require explicitly allowed origins and credentials.
 SameSite=Strict intentionally blocks cross-site session use even if CORS permits
-an origin. No Blazor Admin UI is implemented here.
+an origin. The implemented `MEMS.Admin` instead uses the shared data services
+with fresh contexts and current authorization checks; its cookie is separate.
 
 The legacy iOS bearer token is not accepted by this API.
 
@@ -139,7 +145,9 @@ All POST/PUT/DELETE requests require an active administrator cookie and CSRF.
 Only Super Admin can create, change, or delete municipalities. Municipality
 administrators may manage positions/candidates only inside their assignment.
 Body municipality IDs select a destination; they never grant authorization.
-Records cannot be moved between municipalities by PUT.
+Records cannot be moved between municipalities by PUT. Election dates must be
+between 2000 and 2100, matching the original administrative business rule and
+the shared Admin form validation.
 
 ## Contracts and examples
 
@@ -249,4 +257,4 @@ The optional Task 1 SQL Server test still requires MEMS_TEST_SQLSERVER.
 These tests do not verify Azure deployment or live Firebase access.
 
 No new voting-guide persistence endpoint is added. Public Blazor selections
-remain a future client-side concern and are not stored in SQL Server or Firebase.
+must use browser `sessionStorage` only and are not stored in SQL Server or Firebase.

@@ -1,12 +1,16 @@
 using MEMS.Api.Infrastructure;
 using MEMS.Api.Security;
 using MEMS.Data.Configuration;
+using MEMS.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 builder.Services.AddMemsData(builder.Configuration);
+builder.EnrichSqlServerDbContext<ApplicationDbContext>();
+if (builder.Configuration.GetValue<bool>("Mems:Database:Initialize"))
+    builder.Services.AddHostedService<MemsDatabaseInitializer>();
 builder.Services.AddMemsApiSecurity(builder.Configuration);
 builder.Services.AddDataProtection().SetApplicationName("MEMS.Api");
 builder.Services.AddControllers(o => o.Filters.Add<ApiAntiforgeryFilter>());
@@ -28,7 +32,8 @@ app.UseStatusCodePages(async context =>
         }, extensions: new Dictionary<string, object?> { ["traceId"] = context.HttpContext.TraceIdentifier })
         .ExecuteAsync(context.HttpContext);
 });
-app.UseHttpsRedirection();
+// Aspire probes the status-only development health endpoints over its local HTTP endpoint.
+app.UseWhen(c => c.Request.Path != "/health" && c.Request.Path != "/alive", b => b.UseHttpsRedirection());
 app.UseCors("Frontends");
 app.UseAuthentication();
 app.UseAuthorization();

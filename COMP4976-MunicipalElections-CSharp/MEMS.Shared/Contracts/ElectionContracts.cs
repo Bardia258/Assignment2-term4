@@ -15,7 +15,7 @@ public sealed class CandidateQuery : MunicipalityQuery
     [StringLength(100)] public string? Name { get; set; }
 }
 
-public class MunicipalityRequest
+public class MunicipalityRequest : IValidatableObject
 {
     [Required, StringLength(100)] public string Name { get; set; } = "";
     [Required, StringLength(100), RegularExpression("^[a-z0-9]+(?:-[a-z0-9]+)*$")]
@@ -24,6 +24,12 @@ public class MunicipalityRequest
     [Required] public DateOnly? ElectionDate { get; set; }
     [StringLength(2000)] public string Description { get; set; } = "";
     [StringLength(255), RegularExpression("^[a-zA-Z0-9][a-zA-Z0-9_.-]*$")] public string? LogoFileName { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (ElectionDate.HasValue && ElectionDate.Value.Year is < 2000 or > 2100)
+            yield return new ValidationResult("Choose an election date between 2000 and 2100.", [nameof(ElectionDate)]);
+    }
 }
 
 public sealed class MunicipalityUpdateRequest : MunicipalityRequest

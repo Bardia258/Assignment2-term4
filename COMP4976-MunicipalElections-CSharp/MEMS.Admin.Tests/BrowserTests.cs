@@ -2,6 +2,10 @@ using Microsoft.Playwright;
 
 namespace MEMS.Admin.Tests;
 
+[CollectionDefinition("Browser verification", DisableParallelization = true)]
+public sealed class BrowserVerificationCollection;
+
+[Collection("Browser verification")]
 public sealed class BrowserTests
 {
     [Fact]

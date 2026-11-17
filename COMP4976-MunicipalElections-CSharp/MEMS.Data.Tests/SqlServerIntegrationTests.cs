@@ -2,6 +2,7 @@ using MEMS.Data.Configuration;
 using MEMS.Data.Entities;
 using MEMS.Data.Seeding;
 using MEMS.Data.Services;
+using MEMS.Data.Tenancy;
 using MEMS.Shared.Tenancy;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -54,6 +55,17 @@ public sealed class SqlServerIntegrationTests
             var foreignPosition = await db.Positions.FirstAsync(p => p.MunicipalityId == surrey.MunicipalityId);
             var scope = MunicipalityScope.ForMunicipality(burnaby.MunicipalityId);
             Assert.Equal(8, (await new ElectionRepository(db).GetCandidatesAsync(scope)).Count);
+            var boundary = new TenantQueryContext();
+            boundary.RestrictTo(burnaby.MunicipalityId);
+            await using (var tenantDb = new ApplicationDbContext(options.Options, boundary))
+            {
+                Assert.Equal(8, await tenantDb.Candidates.CountAsync());
+                Assert.Equal(3, await tenantDb.Positions.CountAsync());
+                Assert.False(await tenantDb.Candidates.AnyAsync(c => c.MunicipalityId == surrey.MunicipalityId));
+                var forbidden = await tenantDb.Candidates.IgnoreQueryFilters().FirstAsync(c => c.MunicipalityId == surrey.MunicipalityId);
+                forbidden.Profile = "A forged cross-tenant write.";
+                await Assert.ThrowsAsync<UnauthorizedAccessException>(() => tenantDb.SaveChangesAsync());
+            }
             // Raw SQL bypasses model/service validation, proving the database constraints themselves.
             await Assert.ThrowsAsync<SqlException>(() => db.Database.ExecuteSqlInterpolatedAsync($"""
                 INSERT INTO Candidates (Name, Profile, Revision, PositionId, MunicipalityId)

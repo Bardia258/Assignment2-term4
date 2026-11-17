@@ -19,7 +19,7 @@ Use a separate MEMS database and a trusted SQL Server certificate; configure
 authentication appropriately for your local SQL Server or Azure SQL instance.
 
 The design-time factory reads this project's user secrets, then environment
-variables, then CLI configuration arguments. A future runtime host must supply
+variables, then CLI configuration arguments. A runtime host must supply
 its own configuration and `IHostEnvironment`, and register
 `services.AddMemsData(configuration)` from `MEMS.Data.Configuration`. This adds
 the SQL Server context, Identity user/role stores, `ElectionRepository`, and
@@ -78,7 +78,9 @@ markers and unique indexes prevent duplication. A matching unmarked username,
 email, municipality, or position causes a conflict instead of adopting existing
 records or elevating privileges. Initial passwords are needed only for accounts
 that have not been seeded yet. EF migration locks serialize seeding; domain and
-Identity changes share the same transaction.
+Identity changes share the same transaction. Task 4's AppHost supplies the
+SQL connection and optional seed secrets to the API's Development-only startup
+initializer; see the [backend report](../docs/ASSIGNMENT2-BACKEND.md).
 
 ## Integrity and tenant access
 
@@ -94,7 +96,9 @@ their user or candidate is deleted.
 `ApplicationUser.AdministratorType` distinguishes ordinary users, Super Admins,
 and municipality administrators. A database check requires exactly one valid
 municipality for municipality administrators and no municipality for the other
-two types. Ordinary users are retained for future public saved-candidate support.
+two types. Ordinary users and the original-style saved-candidate schema are
+retained but unused by the new public website. Its voting selections must use
+browser `sessionStorage` only; there are no MEMS voting-selection API endpoints.
 The former per-municipality Identity group table is replaced in the new schema
 by the shared `Municipality Administrator` role plus the user's municipality.
 The legacy group table remains unchanged in Assignment 1.
