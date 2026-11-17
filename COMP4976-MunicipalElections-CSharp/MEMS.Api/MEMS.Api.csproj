@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>MEMS-Api-Development-a2e6d76a-1f3e-41e6-84e7-b27dd32119a3</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

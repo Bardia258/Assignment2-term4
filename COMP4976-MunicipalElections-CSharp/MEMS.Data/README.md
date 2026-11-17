@@ -105,13 +105,17 @@ destination position, and only Super Admin scopes may manage municipalities.
 Posted navigation graphs, seed keys, and creation timestamps are not attached
 or adopted by repository writes. Updates/deletes require the original revision.
 
-Task 2 must derive scopes server-side using `AdministratorScopeResolver` and the
+The API derives scopes server-side using `AdministratorScopeResolver` and the
 authenticated user's ID, and keep `AdministratorType`, municipality assignment,
 and Identity role membership consistent when provisioning/changing users. The
 resolver reads current database assignments and rejects missing/conflicting
 administrator roles, mismatched types, and locked-out users. Never construct a
 Super Admin scope from client input or rely solely on cached role claims. The
-raw DbContext is privileged and does not have global tenant query filters.
+API registers request-scoped `TenantQueryContext`, which defaults to no tenant
+access and adds EF query filters plus write guards. Trusted API resolution
+enables one tenant or Super Admin access. Offline tooling and development
+seeding omit that request context and remain privileged. Do not bypass the
+filters in request handlers; see `MEMS.Api/README.md` for the implemented flow.
 
 ## Tests
 

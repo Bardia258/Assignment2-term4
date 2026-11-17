@@ -29,10 +29,10 @@ public sealed class ElectionRepository(ApplicationDbContext db)
     }
 
     public Task<List<Position>> GetPositionsAsync(MunicipalityScope scope, CancellationToken ct = default) =>
-        Positions(scope).AsNoTracking().OrderBy(p => p.Name).ThenBy(p => p.PositionId).ToListAsync(ct);
+        Positions(scope).AsNoTracking().Include(p => p.Municipality).OrderBy(p => p.Name).ThenBy(p => p.PositionId).ToListAsync(ct);
 
     public Task<Position?> GetPositionAsync(MunicipalityScope scope, int id, CancellationToken ct = default) =>
-        Positions(scope).AsNoTracking().SingleOrDefaultAsync(p => p.PositionId == id, ct);
+        Positions(scope).AsNoTracking().Include(p => p.Municipality).SingleOrDefaultAsync(p => p.PositionId == id, ct);
 
     public Task<List<Candidate>> GetCandidatesAsync(MunicipalityScope scope, int? positionId = null,
         string? search = null, CancellationToken ct = default)
@@ -42,7 +42,8 @@ public sealed class ElectionRepository(ApplicationDbContext db)
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim();
-            query = query.Where(c => c.Name.Contains(term));
+            var normalized = term.ToUpperInvariant();
+            query = query.Where(c => c.Name.ToUpper().Contains(normalized));
         }
         return query.Include(c => c.Position).Include(c => c.Municipality)
             .OrderBy(c => c.Name).ThenBy(c => c.CandidateId).ToListAsync(ct);
@@ -56,6 +57,7 @@ public sealed class ElectionRepository(ApplicationDbContext db)
     {
         DemandSuperAdmin(scope);
         var entity = new Municipality();
+        await CheckMunicipalityDuplicateAsync(input, 0, ct);
         CopyMunicipality(input, entity);
         db.Municipalities.Add(entity);
         await db.SaveChangesAsync(ct);
@@ -67,6 +69,7 @@ public sealed class ElectionRepository(ApplicationDbContext db)
         DemandSuperAdmin(scope);
         var stored = await Municipalities(scope).SingleOrDefaultAsync(m => m.MunicipalityId == input.MunicipalityId, ct);
         if (stored is null) return false;
+        await CheckMunicipalityDuplicateAsync(input, input.MunicipalityId, ct);
         CopyMunicipality(input, stored);
         db.Entry(stored).Property(m => m.Revision).OriginalValue = input.Revision;
         await db.SaveChangesAsync(ct);
@@ -81,7 +84,7 @@ public sealed class ElectionRepository(ApplicationDbContext db)
         if (await db.Positions.AnyAsync(p => p.MunicipalityId == id, ct)
             || await db.Candidates.AnyAsync(c => c.MunicipalityId == id, ct)
             || await db.Users.AnyAsync(u => u.MunicipalityId == id, ct))
-            throw new ValidationException("Remove dependent election records and reassign administrators before deleting a municipality.");
+            throw new RecordConflictException("Remove dependent election records and reassign administrators before deleting a municipality.");
         db.Entry(stored).Property(m => m.Revision).OriginalValue = revision;
         db.Municipalities.Remove(stored);
         await db.SaveChangesAsync(ct);
@@ -94,6 +97,7 @@ public sealed class ElectionRepository(ApplicationDbContext db)
         if (!await Municipalities(scope).AnyAsync(m => m.MunicipalityId == input.MunicipalityId, ct))
             throw new ValidationException("Municipality not found.");
         var entity = new Position { Name = input.Name, SeatsAvailable = input.SeatsAvailable, MunicipalityId = input.MunicipalityId };
+        await CheckPositionDuplicateAsync(input, 0, ct);
         db.Positions.Add(entity);
         await db.SaveChangesAsync(ct);
         return entity;
@@ -105,6 +109,7 @@ public sealed class ElectionRepository(ApplicationDbContext db)
         var stored = await Positions(scope).SingleOrDefaultAsync(p => p.PositionId == input.PositionId, ct);
         if (stored is null) return false;
         if (stored.MunicipalityId != input.MunicipalityId) throw new ValidationException("A position cannot move between municipalities.");
+        await CheckPositionDuplicateAsync(input, input.PositionId, ct);
         stored.Name = input.Name;
         stored.SeatsAvailable = input.SeatsAvailable;
         db.Entry(stored).Property(p => p.Revision).OriginalValue = input.Revision;
@@ -117,7 +122,7 @@ public sealed class ElectionRepository(ApplicationDbContext db)
         var stored = await Positions(scope).SingleOrDefaultAsync(p => p.PositionId == id, ct);
         if (stored is null) return false;
         if (await db.Candidates.AnyAsync(c => c.PositionId == id, ct))
-            throw new ValidationException("Remove candidates before deleting a position.");
+            throw new RecordConflictException("Remove candidates before deleting a position.");
         db.Entry(stored).Property(p => p.Revision).OriginalValue = revision;
         db.Positions.Remove(stored);
         await db.SaveChangesAsync(ct);
@@ -163,6 +168,24 @@ public sealed class ElectionRepository(ApplicationDbContext db)
     {
         if (!await db.Positions.AnyAsync(p => p.PositionId == positionId && p.MunicipalityId == municipalityId, ct))
             throw new ValidationException("The selected position does not belong to this municipality.");
+    }
+
+    private async Task CheckMunicipalityDuplicateAsync(Municipality input, int id, CancellationToken ct)
+    {
+        var name = input.Name.Trim().ToUpperInvariant();
+        var province = input.Province.Trim().ToUpperInvariant();
+        // Only Super Admin mutations reach here; uniqueness spans the full municipality directory.
+        if (await db.Municipalities.IgnoreQueryFilters().AnyAsync(m => m.MunicipalityId != id
+            && (m.Slug == input.Slug || (m.Name.ToUpper() == name && m.Province.ToUpper() == province)), ct))
+            throw new RecordConflictException("A municipality with these unique values already exists.");
+    }
+
+    private async Task CheckPositionDuplicateAsync(Position input, int id, CancellationToken ct)
+    {
+        var name = input.Name.Trim().ToUpperInvariant();
+        if (await db.Positions.AnyAsync(p => p.PositionId != id && p.MunicipalityId == input.MunicipalityId
+            && p.Name.ToUpper() == name, ct))
+            throw new RecordConflictException("This municipality already has a position with that name.");
     }
 
     private static void DemandSuperAdmin(MunicipalityScope scope)

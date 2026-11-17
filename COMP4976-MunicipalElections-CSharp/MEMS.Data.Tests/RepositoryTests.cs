@@ -97,7 +97,7 @@ public sealed class RepositoryTests
         Assert.Null(candidate.SeedKey);
         await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => repository.UpdateCandidateAsync(scope, edit));
         db.ChangeTracker.Clear();
-        await Assert.ThrowsAsync<ValidationException>(() => repository.DeletePositionAsync(scope, position.PositionId, position.Revision));
+        await Assert.ThrowsAsync<RecordConflictException>(() => repository.DeletePositionAsync(scope, position.PositionId, position.Revision));
         db.ChangeTracker.Clear();
         var saved = (await repository.GetCandidateAsync(scope, candidate.CandidateId))!;
         Assert.True(await repository.DeleteCandidateAsync(scope, saved.CandidateId, saved.Revision));

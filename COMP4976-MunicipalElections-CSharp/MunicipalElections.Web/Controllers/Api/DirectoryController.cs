@@ -29,13 +29,23 @@ public sealed class DirectoryResponses(IImageStorage images)
 public sealed class MunicipalitiesApiController(ApplicationDbContext db, IImageStorage images) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> List(CancellationToken cancellationToken) => Ok((await db.Municipalities
-        .AsNoTracking().OrderBy(m => m.Name).ToListAsync(cancellationToken)).Select(new DirectoryResponses(images).Municipality));
+    public async Task<IActionResult> List([FromQuery] MunicipalityDirectoryQuery filter, CancellationToken cancellationToken)
+    {
+        var (municipalityId, error) = await MunicipalityDirectoryFilter.ResolveAsync(db, filter, cancellationToken, Request.Query);
+        if (error is not null) return error;
+        return Ok((await db.Municipalities.AsNoTracking()
+            .Where(m => municipalityId == null || m.MunicipalityId == municipalityId)
+            .OrderBy(m => m.Name).ToListAsync(cancellationToken)).Select(new DirectoryResponses(images).Municipality));
+    }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> Details(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Details([System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)] int id,
+        [FromQuery] MunicipalityDirectoryQuery filter, CancellationToken cancellationToken)
     {
-        var municipality = await db.Municipalities.AsNoTracking().SingleOrDefaultAsync(m => m.MunicipalityId == id, cancellationToken);
+        var (municipalityId, error) = await MunicipalityDirectoryFilter.ResolveAsync(db, filter, cancellationToken, Request.Query);
+        if (error is not null) return error;
+        var municipality = await db.Municipalities.AsNoTracking().SingleOrDefaultAsync(m => m.MunicipalityId == id
+            && (municipalityId == null || m.MunicipalityId == municipalityId), cancellationToken);
         return municipality is null ? NotFound() : Ok(new DirectoryResponses(images).Municipality(municipality));
     }
 }
@@ -44,16 +54,24 @@ public sealed class MunicipalitiesApiController(ApplicationDbContext db, IImageS
 public sealed class PositionsApiController(ApplicationDbContext db, IImageStorage images) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> List(int? municipalityId, CancellationToken cancellationToken) => Ok((await db.Positions
-        .AsNoTracking().Include(p => p.Municipality).Where(p => municipalityId == null || p.MunicipalityId == municipalityId)
-        .OrderBy(p => p.Municipality.Name).ThenBy(p => p.Name).ToListAsync(cancellationToken))
-        .Select(new DirectoryResponses(images).Position));
+    public async Task<IActionResult> List([FromQuery] MunicipalityDirectoryQuery filter, CancellationToken cancellationToken)
+    {
+        var (municipalityId, error) = await MunicipalityDirectoryFilter.ResolveAsync(db, filter, cancellationToken, Request.Query);
+        if (error is not null) return error;
+        return Ok((await db.Positions.AsNoTracking().Include(p => p.Municipality)
+            .Where(p => municipalityId == null || p.MunicipalityId == municipalityId)
+            .OrderBy(p => p.Municipality.Name).ThenBy(p => p.Name).ToListAsync(cancellationToken))
+            .Select(new DirectoryResponses(images).Position));
+    }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> Details(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Details([System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)] int id,
+        [FromQuery] MunicipalityDirectoryQuery filter, CancellationToken cancellationToken)
     {
+        var (municipalityId, error) = await MunicipalityDirectoryFilter.ResolveAsync(db, filter, cancellationToken, Request.Query);
+        if (error is not null) return error;
         var position = await db.Positions.AsNoTracking().Include(p => p.Municipality)
-            .SingleOrDefaultAsync(p => p.PositionId == id, cancellationToken);
+            .SingleOrDefaultAsync(p => p.PositionId == id && (municipalityId == null || p.MunicipalityId == municipalityId), cancellationToken);
         return position is null ? NotFound() : Ok(new DirectoryResponses(images).Position(position));
     }
 }
@@ -62,8 +80,15 @@ public sealed class PositionsApiController(ApplicationDbContext db, IImageStorag
 public sealed class CandidatesApiController(ApplicationDbContext db, IImageStorage images) : ControllerBase
 {
     [HttpGet, HttpGet("search")]
-    public async Task<IActionResult> List(string? name, int? municipalityId, int? positionId, CancellationToken cancellationToken)
+    public async Task<IActionResult> List([FromQuery] CandidateDirectoryQuery filter, CancellationToken cancellationToken)
     {
+        var (municipalityId, error) = await MunicipalityDirectoryFilter.ResolveAsync(db, filter, cancellationToken, Request.Query);
+        if (error is not null) return error;
+        var name = filter.Name;
+        var positionId = filter.PositionId;
+        if (positionId.HasValue && !await db.Positions.AnyAsync(p => p.PositionId == positionId
+            && (municipalityId == null || p.MunicipalityId == municipalityId), cancellationToken))
+            return MunicipalityDirectoryFilter.Error(404, "Position not found for the requested municipality.");
         var query = db.Candidates.AsNoTracking().Include(c => c.Municipality).Include(c => c.Position).AsQueryable();
         if (!string.IsNullOrWhiteSpace(name))
         {
@@ -77,10 +102,13 @@ public sealed class CandidatesApiController(ApplicationDbContext db, IImageStora
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> Details(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Details([System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)] int id,
+        [FromQuery] MunicipalityDirectoryQuery filter, CancellationToken cancellationToken)
     {
+        var (municipalityId, error) = await MunicipalityDirectoryFilter.ResolveAsync(db, filter, cancellationToken, Request.Query);
+        if (error is not null) return error;
         var candidate = await db.Candidates.AsNoTracking().Include(c => c.Municipality).Include(c => c.Position)
-            .SingleOrDefaultAsync(c => c.CandidateId == id, cancellationToken);
+            .SingleOrDefaultAsync(c => c.CandidateId == id && (municipalityId == null || c.MunicipalityId == municipalityId), cancellationToken);
         return candidate is null ? NotFound() : Ok(new DirectoryResponses(images).Candidate(candidate));
     }
 }

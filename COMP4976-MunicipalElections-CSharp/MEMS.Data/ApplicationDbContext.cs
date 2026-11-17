@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using MEMS.Data.Entities;
+using MEMS.Data.Tenancy;
 using MEMS.Shared.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -7,13 +8,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MEMS.Data;
 
-public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, TenantQueryContext? tenantQueries = null)
     : IdentityDbContext<ApplicationUser>(options)
 {
     public DbSet<Municipality> Municipalities => Set<Municipality>();
     public DbSet<Position> Positions => Set<Position>();
     public DbSet<Candidate> Candidates => Set<Candidate>();
     public DbSet<SavedCandidate> SavedCandidates => Set<SavedCandidate>();
+    public bool LimitTenantQueries => tenantQueries?.IsRestricted == true;
+    public int? QueryMunicipalityId => tenantQueries?.MunicipalityId;
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
@@ -30,6 +33,17 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     private void ValidateAndRefreshRevisions()
     {
         ChangeTracker.DetectChanges();
+        if (LimitTenantQueries)
+        {
+            foreach (var entry in ChangeTracker.Entries().Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted))
+            {
+                if (entry.Entity is not (Municipality or Position or Candidate)) continue;
+                var owner = entry.Property("MunicipalityId");
+                if (QueryMunicipalityId is null || !Equals(owner.CurrentValue, QueryMunicipalityId.Value)
+                    || (entry.State != EntityState.Added && !Equals(owner.OriginalValue, QueryMunicipalityId.Value)))
+                    throw new UnauthorizedAccessException("The record is outside the current tenant query scope.");
+            }
+        }
         foreach (var entry in ChangeTracker.Entries().Where(e => e.State is EntityState.Added or EntityState.Modified))
         {
             Validator.ValidateObject(entry.Entity, new ValidationContext(entry.Entity), validateAllProperties: true);
@@ -56,5 +70,9 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
         builder.Entity<IdentityUserToken<string>>().Property(t => t.Name).HasMaxLength(128);
         builder.UseCollation("Latin1_General_100_CI_AS");
         builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+        builder.Entity<Municipality>().HasQueryFilter(m => !LimitTenantQueries || m.MunicipalityId == QueryMunicipalityId);
+        builder.Entity<Position>().HasQueryFilter(p => !LimitTenantQueries || p.MunicipalityId == QueryMunicipalityId);
+        builder.Entity<Candidate>().HasQueryFilter(c => !LimitTenantQueries || c.MunicipalityId == QueryMunicipalityId);
+        builder.Entity<SavedCandidate>().HasQueryFilter(s => !LimitTenantQueries || s.Candidate.MunicipalityId == QueryMunicipalityId);
     }
 }
