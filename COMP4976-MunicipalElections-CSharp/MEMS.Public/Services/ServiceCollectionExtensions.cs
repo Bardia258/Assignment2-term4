@@ -1,5 +1,7 @@
 using MEMS.Public.Services.Api;
+using MEMS.Public.Services.Ballot;
 using MEMS.Public.Services.Mock;
+using MEMS.Public.Services.Storage;
 using MEMS.Public.Services.Tenancy;
 
 namespace MEMS.Public.Services;
@@ -11,6 +13,10 @@ public static class ServiceCollectionExtensions
     {
         // Scoped in Blazor WebAssembly = one instance per browser tab.
         services.AddScoped<TenantState>();
+
+        // Voting guide: browser sessionStorage only, never sent to the API.
+        services.AddScoped<IBrowserSessionStorage, BrowserSessionStorage>();
+        services.AddScoped<IBallotSessionService, BallotSessionService>();
         return services;
     }
 
