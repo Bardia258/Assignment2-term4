@@ -5,6 +5,7 @@
 @implements IDisposable
 @using MEMS.Public.Services
 @using MEMS.Public.Services.Api
+@using MEMS.Public.Components.Ballot
 @inject ICandidateApiClient CandidateApi
 @inject ILogger<CandidateProfile> Logger
 
@@ -45,52 +46,76 @@ else
 
     <PageTitle>@candidate.Name · @Municipality.Name</PageTitle>
 
+    @* Two-column layout ported from A1's Candidates/Details.cshtml. *@
     <article class="row g-4">
-        <div class="col-12 col-md-auto text-center text-md-start">
-            <CandidateAvatar Name="@candidate.Name" PhotoUrl="@candidate.PhotoUrl" Size="160" />
+        <div class="col-md-4">
+            <div class="card shadow-sm border-primary">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <CandidateAvatar Name="@candidate.Name" PhotoUrl="@candidate.PhotoUrl" Size="160" />
+                    </div>
+                    <div class="d-print-none">
+                        <div class="mb-2">
+                            <BallotToggleButton Candidate="candidate" Block="true" />
+                        </div>
+                        <a class="btn btn-outline-secondary btn-sm w-100" href="@CandidatesHref">Back to all candidates</a>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="col">
-            <p class="text-uppercase text-secondary small mb-1">
-                Candidate for @candidate.PositionTitle · @Municipality.Name
-            </p>
-            <h1>@candidate.Name</h1>
 
-            <h2 class="h5 mt-4">About</h2>
-            @if (string.IsNullOrWhiteSpace(candidate.Profile))
-            {
-                <p class="text-secondary">This candidate hasn't provided a profile yet.</p>
-            }
-            else
-            {
-                <p class="mw-prose candidate-profile">@candidate.Profile</p>
-            }
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h1 class="card-title fw-bold text-primary">@candidate.Name</h1>
+                    <p class="h5 card-subtitle mb-3 text-secondary">Candidate for @candidate.PositionTitle · @Municipality.Name</p>
+                    <p class="text-secondary small mb-0">
+                        <strong>Profile created:</strong>
+                        <time datetime="@candidate.DateCreated.ToString("yyyy-MM-dd")">@candidate.DateCreated.ToString("MMMM d, yyyy")</time>
+                    </p>
 
-            @if (website is not null || mailTo is not null)
-            {
-                <h2 class="h5 mt-4">Contact</h2>
-                <ul class="list-unstyled">
-                    @if (website is not null)
+                    <hr />
+
+                    <h2 class="h5 mt-4">Biography / profile</h2>
+                    @if (string.IsNullOrWhiteSpace(candidate.Profile))
                     {
-                        <li class="mb-1">
-                            <span class="text-secondary">Website:</span>
-                            <a href="@website.AbsoluteUri" target="_blank" rel="noopener noreferrer nofollow">
-                                @SafeLinks.DisplayText(website)<span class="visually-hidden"> (opens in a new tab)</span>
-                            </a>
-                        </li>
+                        <p class="text-secondary">This candidate hasn't provided a profile yet.</p>
                     }
-                    @if (mailTo is not null)
+                    else
                     {
-                        <li class="mb-1">
-                            <span class="text-secondary">Email:</span>
-                            <a href="@mailTo">@candidate.Email!.Trim()</a>
-                        </li>
+                        <p class="lead mw-prose candidate-profile">@candidate.Profile</p>
                     }
-                </ul>
-            }
 
-            <a class="btn btn-outline-primary mt-3 d-print-none" href="@CandidatesHref">
-                ← Back to all candidates
-            </a>
+                    <hr />
+
+                    <h2 class="h5 mt-4">Contact information</h2>
+                    <ul class="list-unstyled mb-0">
+                        @if (website is not null)
+                        {
+                            <li class="mb-2">
+                                <strong>Website:</strong>
+                                <a href="@website.AbsoluteUri" target="_blank" rel="noopener noreferrer nofollow">
+                                    @SafeLinks.DisplayText(website)<span class="visually-hidden"> (opens in a new tab)</span>
+                                </a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="mb-2 text-secondary"><strong>Website:</strong> Not provided</li>
+                        }
+                        @if (mailTo is not null)
+                        {
+                            <li class="mb-2">
+                                <strong>Email:</strong> <a href="@mailTo">@candidate.Email!.Trim()</a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="mb-2 text-secondary"><strong>Email:</strong> Not provided</li>
+                        }
+                    </ul>
+                </div>
+            </div>
         </div>
     </article>
 }

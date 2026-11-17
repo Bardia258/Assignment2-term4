@@ -12,8 +12,10 @@
 @implements IDisposable
 @using MEMS.Public.Services
 @using MEMS.Public.Services.Api
+@using MEMS.Public.Services.Ballot
 @inject IPositionApiClient PositionApi
 @inject ICandidateApiClient CandidateApi
+@inject IBallotSessionService Ballot
 @inject ILogger<CandidateDirectory> Logger
 
 @if (errorMessage is not null)
@@ -85,6 +87,13 @@ else
             <div class="d-flex flex-wrap align-items-baseline gap-2 border-bottom pb-2 mb-3">
                 <h2 class="h4 mb-0" id="position-@section.Position.Id">@section.Position.Name</h2>
                 <span class="badge text-bg-light border">@SeatsText(section.Position.SeatsAvailable)</span>
+                @if (ChosenFor(section.Position.Id) is var chosen and > 0)
+                {
+                    <a class="badge @(chosen >= section.Position.SeatsAvailable ? "text-bg-success" : "text-bg-success-subtle text-success-emphasis") text-decoration-none"
+                       href="@($"{Municipality.Slug}/guide")">
+                        @chosen of @section.Position.SeatsAvailable in your guide
+                    </a>
+                }
                 <span class="text-secondary small ms-auto">@CountText(section.Candidates.Count)</span>
             </div>
 
@@ -131,8 +140,27 @@ else
     // The text box is the source of truth while typing; it only takes the URL value when that
     // changes from outside (back/forward, a shared link, "Clear filters").
     private string? searchText;
+    private BallotSelections? selections;
     private ElementReference searchInput;
     private CandidateFilterState? lastFilter;
+
+    protected override void OnInitialized() => Ballot.Changed += OnBallotChanged;
+
+    private int ChosenFor(int positionId) => selections?.CountFor(positionId) ?? 0;
+
+    private async void OnBallotChanged(string slug)
+    {
+        if (slug != Municipality.Slug) return;
+        try
+        {
+            selections = await Ballot.GetAsync(slug);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to refresh voting guide counts for {Slug}", slug);
+        }
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -176,6 +204,10 @@ else
                 .Select(s => new PositionFilter.Option(s.Position.Id, s.Position.Name, s.Candidates.Count))
                 .ToList();
             totalCount = sections.Sum(s => s.Candidates.Count);
+
+            // Keep the guide's seat counts honest: drop picks who are no longer running.
+            await Ballot.ReconcileAsync(slug, candidatesTask.Result);
+            selections = await Ballot.GetAsync(slug);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
@@ -242,6 +274,7 @@ else
 
     public void Dispose()
     {
+        Ballot.Changed -= OnBallotChanged;
         cts?.Cancel();
         cts?.Dispose();
     }
