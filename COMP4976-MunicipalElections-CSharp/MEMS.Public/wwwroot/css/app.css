@@ -177,3 +177,167 @@ code {
 .guide-status:focus {
     outline: none;
 }
+
+/* Printable voting guide (screen preview looks like a Letter sheet) */
+.print-sheet {
+    max-width: 8.5in;
+    margin: 0 auto 2rem;
+    padding: 0.6in;
+    background-color: #fff;
+    color: #000;
+    border: 1px solid var(--bs-border-color);
+    box-shadow: 0 .5rem 1.5rem rgba(0, 0, 0, .08);
+}
+
+.print-header {
+    border-bottom: 2px solid #000;
+    padding-bottom: .75rem;
+    margin-bottom: 1rem;
+}
+
+.print-eyebrow,
+.print-meta {
+    font-size: .85rem;
+    color: #444;
+}
+
+.print-eyebrow {
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+.print-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+.print-position {
+    padding: .5rem 0 .75rem;
+    border-bottom: 1px solid #bbb;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.print-position-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .25rem 1rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: .35rem;
+    break-after: avoid;
+    page-break-after: avoid;
+}
+
+.print-seats {
+    font-size: .85rem;
+    font-weight: 400;
+    color: #444;
+}
+
+.print-picks {
+    columns: 2;
+    column-gap: 2rem;
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+    .print-picks li {
+        break-inside: avoid;
+        padding: .1rem 0;
+        font-size: 1.05rem;
+    }
+
+.print-empty {
+    font-style: italic;
+    color: #444;
+}
+
+.print-footer {
+    margin-top: 1rem;
+    font-size: .8rem;
+    color: #444;
+}
+
+@media (max-width: 575.98px) {
+    .print-sheet {
+        padding: 1.25rem;
+    }
+
+    .print-picks {
+        columns: 1;
+    }
+}
+
+/* Printing any page: paper-friendly colours, no site chrome or controls. */
+@media print {
+    @page {
+        size: letter portrait;
+        margin: 0.5in;
+    }
+
+    :root {
+        color-scheme: light;
+    }
+
+    body {
+        background: #fff !important;
+        color: #000 !important;
+        font-size: 11pt;
+    }
+
+    main.container,
+    main {
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .navbar,
+    .btn,
+    .breadcrumb,
+    [role="search"],
+    .guide-status,
+    .form-text {
+        display: none !important;
+    }
+
+    a {
+        color: inherit !important;
+        text-decoration: none !important;
+    }
+
+    .card {
+        box-shadow: none !important;
+    }
+
+    section {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    h1, h2, h3 {
+        break-after: avoid;
+        page-break-after: avoid;
+    }
+
+    .print-sheet {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        box-shadow: none;
+    }
+
+    .print-picks {
+        columns: 2;
+    }
+
+    /* Letter's printable width is below Bootstrap's md breakpoint; keep guide cards two-up. */
+    .guide-pick {
+        flex: 0 0 auto;
+        width: 50%;
+    }
+}

@@ -17,6 +17,7 @@ public static class ServiceCollectionExtensions
         // Voting guide: browser sessionStorage only, never sent to the API.
         services.AddScoped<IBrowserSessionStorage, BrowserSessionStorage>();
         services.AddScoped<IBallotSessionService, BallotSessionService>();
+        services.AddScoped<VotingGuideLoader>();
         return services;
     }
 

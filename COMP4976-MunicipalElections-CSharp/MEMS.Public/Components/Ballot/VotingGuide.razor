@@ -8,11 +8,9 @@
       - Remove happens in place (A1 used a GET link that reloaded the page).
 *@
 @implements IDisposable
-@using MEMS.Public.Services
 @using MEMS.Public.Services.Api
 @using MEMS.Public.Services.Ballot
-@inject IPositionApiClient PositionApi
-@inject ICandidateApiClient CandidateApi
+@inject VotingGuideLoader GuideLoader
 @inject IBallotSessionService Ballot
 @inject ILogger<VotingGuide> Logger
 
@@ -26,7 +24,8 @@
     @if (view is { ChosenCount: > 0 })
     {
         <div class="d-flex flex-wrap gap-2 d-print-none">
-            @* "Print my guide" (A1's Print button) is added in Phase 5. *@
+            @* A1's "Print My Guide" button, now opening the print view for this municipality only. *@
+            <a class="btn btn-success" href="@($"{Municipality.Slug}/guide/print")">Print my guide</a>
             @if (!confirmingClear)
             {
                 <button type="button" class="btn btn-outline-danger" @onclick="() => confirmingClear = true">Clear guide</button>
@@ -98,7 +97,7 @@ else
     @foreach (var section in view.Sections)
     {
         var position = section.Position;
-        var open = position.SeatsAvailable - section.Chosen.Count;
+        var open = section.OpenSeats;
 
         <section class="mb-4" aria-labelledby="guide-position-@position.Id" @key="position.Id">
             <div class="d-flex flex-wrap align-items-baseline gap-2 border-bottom pb-2 mb-3">
@@ -111,7 +110,7 @@ else
             <div class="row g-3">
                 @foreach (var candidate in section.Chosen)
                 {
-                    <div class="col-md-6" @key="candidate.Id">
+                    <div class="col-md-6 guide-pick" @key="candidate.Id">
                         <div class="card shadow-sm border-success h-100">
                             <div class="card-body d-flex align-items-center gap-3">
                                 <CandidateAvatar Name="@candidate.Name" PhotoUrl="@candidate.PhotoUrl" Size="48" />
@@ -158,17 +157,13 @@ else
 @code {
     [Parameter, EditorRequired] public MunicipalityResponse Municipality { get; set; } = default!;
 
-    private sealed record GuideSection(PositionResponse Position, IReadOnlyList<CandidateResponse> Chosen,
-        bool HasMoreCandidates);
-
     private sealed record GuideView(IReadOnlyList<GuideSection> Sections)
     {
         public int ChosenCount => Sections.Sum(s => s.Chosen.Count);
     }
 
-    // Loaded once per municipality from the API; the view is rebuilt from these when the guide changes.
-    private IReadOnlyList<PositionResponse>? positions;
-    private IReadOnlyList<CandidateResponse>? candidates;
+    // Public directory, loaded once per municipality; the view is rebuilt from it when the guide changes.
+    private GuideData? data;
     private GuideView? view;
     private int droppedCount;
     private string? errorMessage;
@@ -207,14 +202,11 @@ else
 
         try
         {
-            var positionsTask = PositionApi.GetPositionsAsync(slug, token);
-            var candidatesTask = CandidateApi.GetCandidatesAsync(new CandidateQuery { MunicipalitySlug = slug }, token);
-            await Task.WhenAll(positionsTask, candidatesTask);
+            var loaded = await GuideLoader.LoadAsync(slug, token);
             if (token.IsCancellationRequested) return;
 
-            positions = PositionOrder.Sort(positionsTask.Result);
-            candidates = candidatesTask.Result;
-            droppedCount = await Ballot.ReconcileAsync(slug, candidates);
+            data = loaded;
+            droppedCount = loaded.DroppedCount;
             await RebuildAsync();
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
@@ -232,19 +224,8 @@ else
 
     private async Task RebuildAsync()
     {
-        if (positions is null || candidates is null) return;
-        var selections = await Ballot.GetAsync(Municipality.Slug);
-        var byId = candidates.ToDictionary(c => c.Id);
-        var chosen = selections.Entries.Where(e => byId.ContainsKey(e.CandidateId)).Select(e => byId[e.CandidateId]).ToList();
-
-        view = new GuideView(positions
-            .Select(p =>
-            {
-                var picks = chosen.Where(c => c.PositionId == p.Id).ToList();
-                var hasMore = candidates.Any(c => c.PositionId == p.Id && !selections.Contains(c.Id));
-                return new GuideSection(p, picks, hasMore);
-            })
-            .ToList());
+        if (data is null) return;
+        view = new GuideView(data.BuildSections(await Ballot.GetAsync(Municipality.Slug)));
     }
 
     private async void OnBallotChanged(string slug)

@@ -1,0 +1,135 @@
+@*
+    Print view of the voter's guide. Ported from A1's Views/VotingGuide/Print.cshtml (screen-only toolbar
+    with "Print Now" / "Back to Guide", a title block with the print date, one entry per pick), with these changes:
+      - picks come only from the sessionStorage ballot for this municipality; the API supplies just the
+        public directory (names, positions, seats) to display them;
+      - the title names the municipality and election day once, instead of a generic heading with the
+        election date repeated under every candidate;
+      - picks are grouped by position in ballot order with "Vote for up to N", and positions with no pick
+        are listed as "No selection" so the voter can see what's left;
+      - the print date is the voter's own local date (A1 used the server clock);
+      - Print uses JS interop instead of an inline onclick, and positions never split across pages.
+*@
+@using MEMS.Public.Services.Api
+@using MEMS.Public.Services.Ballot
+@inject VotingGuideLoader GuideLoader
+@inject IBallotSessionService Ballot
+@inject ILogger<PrintableGuide> Logger
+
+<div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 py-3 d-print-none">
+    <div>
+        <h1 class="h2 mb-1">Printable voting guide</h1>
+        <p class="text-secondary mb-0">Check the preview below, then print it or save it as a PDF.</p>
+    </div>
+    <div class="d-flex flex-wrap align-items-start gap-2">
+        @if (sections is not null && chosenCount > 0)
+        {
+            <div><PrintButton Label="Print now" /></div>
+        }
+        <a class="btn btn-outline-secondary" href="@($"{Municipality.Slug}/guide")">Back to guide</a>
+    </div>
+</div>
+
+@if (errorMessage is not null)
+{
+    <ErrorAlert Message="@errorMessage" OnRetry="LoadAsync" />
+}
+else if (sections is null)
+{
+    <LoadingSpinner Message="Preparing your printable guide…" />
+}
+else if (chosenCount == 0)
+{
+    <div class="alert alert-info">
+        Your @Municipality.Name guide is empty, so there's nothing to print yet.
+        <a href="@($"{Municipality.Slug}/candidates")">Browse candidates</a> to add some.
+    </div>
+}
+else
+{
+    <article class="print-sheet" aria-label="Voting guide preview">
+        <header class="print-header">
+            <p class="print-eyebrow mb-1">My voting guide</p>
+            <h2 class="print-title mb-1">@Municipality.Name municipal election</h2>
+            <p class="mb-0">
+                Election day: <strong>@Municipality.ElectionDate.ToString("dddd, MMMM d, yyyy")</strong>
+            </p>
+            <p class="print-meta mb-0">
+                Printed @printedOn.ToString("MMMM d, yyyy") · @CountText(chosenCount) chosen
+            </p>
+        </header>
+
+        @foreach (var section in sections)
+        {
+            <section class="print-position" @key="section.Position.Id">
+                <h3 class="print-position-title">
+                    @section.Position.Name
+                    <span class="print-seats">
+                        Vote for @(section.Position.SeatsAvailable == 1 ? "1" : $"up to {section.Position.SeatsAvailable}")
+                        · @section.Chosen.Count chosen
+                    </span>
+                </h3>
+                @if (section.Chosen.Count == 0)
+                {
+                    <p class="print-empty mb-0">No selection</p>
+                }
+                else
+                {
+                    <ol class="print-picks">
+                        @foreach (var candidate in section.Chosen)
+                        {
+                            <li>@candidate.Name</li>
+                        }
+                    </ol>
+                }
+            </section>
+        }
+
+        <footer class="print-footer">
+            This is a personal guide, not an official ballot. It was made from choices saved only in your browser.
+        </footer>
+    </article>
+}
+
+@code {
+    [Parameter, EditorRequired] public MunicipalityResponse Municipality { get; set; } = default!;
+
+    private IReadOnlyList<GuideSection>? sections;
+    private int chosenCount;
+    private string? errorMessage;
+    private string? loadedSlug;
+
+    // The voter's local date (Blazor WebAssembly runs in the browser's time zone).
+    private DateTime printedOn = DateTime.Now;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Municipality.Slug == loadedSlug) return;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        var slug = Municipality.Slug;
+        loadedSlug = slug;
+        sections = null;
+        errorMessage = null;
+        printedOn = DateTime.Now;
+
+        try
+        {
+            var data = await GuideLoader.LoadAsync(slug);
+            sections = data.BuildSections(await Ballot.GetAsync(slug));
+            chosenCount = sections.Sum(s => s.Chosen.Count);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to prepare printable guide for {Slug}", slug);
+            errorMessage = ex is ApiRequestException
+                ? ex.Message
+                : "We couldn't prepare your printable guide right now. Please try again.";
+        }
+    }
+
+    private static string CountText(int count) => count == 1 ? "1 candidate" : $"{count} candidates";
+}
