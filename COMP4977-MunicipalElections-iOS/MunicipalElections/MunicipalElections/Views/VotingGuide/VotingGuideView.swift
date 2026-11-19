@@ -1,13 +1,13 @@
 import SwiftUI
 
 struct VotingGuideView: View {
-    @EnvironmentObject var guideManager: VotingGuideManager
-    @AppStorage("authToken") private var authToken = ""
+    @EnvironmentObject private var guideManager: VotingGuideManager
+    @EnvironmentObject private var session: AuthSession
 
     var body: some View {
         NavigationStack {
             Group {
-                if authToken.isEmpty {
+                if !session.isLoggedIn {
                     ContentUnavailableView("Not Logged In", systemImage: "person.crop.circle.badge.questionmark",
                         description: Text("Log in from the Account tab to view and save your voting guide."))
                 } else if guideManager.isLoading && guideManager.selectedCandidates.isEmpty {
@@ -15,7 +15,7 @@ struct VotingGuideView: View {
                 } else if let error = guideManager.errorMessage, guideManager.selectedCandidates.isEmpty {
                     VStack(spacing: 12) {
                         Text(error).foregroundStyle(.red).multilineTextAlignment(.center)
-                        Button("Retry") { Task { await guideManager.load(token: authToken) } }
+                        Button("Retry") { Task { await guideManager.reload() } }
                     }
                     .padding()
                 } else if guideManager.selectedCandidates.isEmpty {
@@ -24,7 +24,7 @@ struct VotingGuideView: View {
                     } description: {
                         Text("Browse municipalities and add candidates to build your personalized voting guide.")
                     } actions: {
-                        Button("Refresh") { Task { await guideManager.load(token: authToken) } }
+                        Button("Refresh") { Task { await guideManager.reload() } }
                     }
                 } else {
                     guideList
@@ -57,11 +57,11 @@ struct VotingGuideView: View {
             }
             .onDelete { offsets in
                 let ids = offsets.map { guideManager.selectedCandidates[$0].id }
-                Task { await guideManager.remove(candidateIDs: ids, token: authToken) }
+                Task { await guideManager.remove(candidateIDs: ids) }
             }
             .deleteDisabled(guideManager.isLoading)
         }
-        .refreshable { await guideManager.load(token: authToken) }
+        .refreshable { await guideManager.reload() }
         .toolbar {
             EditButton().disabled(guideManager.isLoading)
         }

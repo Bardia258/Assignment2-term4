@@ -1,43 +1,52 @@
 import SwiftUI
 
 struct ProfileView: View {
-    @AppStorage("authToken") var authToken: String = ""
-    @AppStorage("userEmail") var userEmail: String = ""
-    
+    @EnvironmentObject private var session: AuthSession
+    @State private var confirmingLogout = false
+
     var body: some View {
         NavigationStack {
-            VStack(spacing: 30) {
-                Image(systemName: "person.crop.circle.fill")
-                    .font(.system(size: 80))
-                    .foregroundColor(.blue)
-                
-                Text(userEmail)
-                    .font(.title2)
-                    .fontWeight(.bold)
-                
-                Text("Authenticated User")
-                    .foregroundColor(.green)
-                    .font(.subheadline)
-                
-                Spacer()
-                
-                Button(action: {
-                    // Logout
-                    authToken = ""
-                    userEmail = ""
-                }) {
-                    Text("Log Out")
-                        .fontWeight(.bold)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.red)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+            List {
+                Section {
+                    HStack(spacing: 16) {
+                        Image(systemName: "person.crop.circle.fill")
+                            .font(.system(size: 56))
+                            .foregroundStyle(.blue)
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(session.email ?? "")
+                                .font(.headline)
+                            Label("Signed in", systemImage: "checkmark.seal.fill")
+                                .font(.subheadline)
+                                .foregroundStyle(.green)
+                        }
+                    }
+                    .padding(.vertical, 8)
                 }
-                .padding(.horizontal)
-                .padding(.bottom, 40)
+
+                Section {
+                    Button("Log Out", role: .destructive) { confirmingLogout = true }
+                }
+
+                #if DEBUG
+                Section {
+                    Button("Simulate Session Expiry") { session.simulateExpiry() }
+                } header: {
+                    Text("Testing")
+                } footer: {
+                    Text("Debug builds only. Shows the same logout and message as a real expired token.")
+                }
+                #endif
             }
             .navigationTitle("My Profile")
+            .confirmationDialog("Log out of your account?", isPresented: $confirmingLogout, titleVisibility: .visible) {
+                Button("Log Out", role: .destructive) { session.logout() }
+            }
         }
     }
+}
+
+#Preview {
+    ProfileView()
+        .environmentObject(AuthSession())
 }

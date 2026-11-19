@@ -21,19 +21,13 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct MunicipalElectionsApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @StateObject private var session = AuthSession()
     @StateObject private var guideManager = VotingGuideManager()
-
-    init() {
-        // Existing installations must sign in again with a real account.
-        if UserDefaults.standard.string(forKey: "authToken")?.hasPrefix("mock-") == true {
-            UserDefaults.standard.removeObject(forKey: "authToken")
-            UserDefaults.standard.removeObject(forKey: "userEmail")
-        }
-    }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(session)
                 .environmentObject(guideManager)
         }
     }

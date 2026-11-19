@@ -3,8 +3,8 @@ import SwiftUI
 struct CandidateDetailView: View {
     let candidate: Candidate
 
-    @EnvironmentObject var guideManager: VotingGuideManager
-    @AppStorage("authToken") private var authToken = ""
+    @EnvironmentObject private var guideManager: VotingGuideManager
+    @EnvironmentObject private var session: AuthSession
 
     var body: some View {
         ScrollView {
@@ -81,7 +81,7 @@ struct CandidateDetailView: View {
     private var guideSection: some View {
         let isInGuide = guideManager.isInGuide(candidate: candidate)
 
-        if authToken.isEmpty {
+        if !session.isLoggedIn {
             Text("Log in from the Account tab to save candidates to your voting guide.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
@@ -95,7 +95,7 @@ struct CandidateDetailView: View {
         }
 
         Button {
-            Task { await guideManager.add(candidate: candidate, token: authToken) }
+            Task { await guideManager.add(candidate: candidate) }
         } label: {
             Text(guideManager.isLoading ? "Updating Guide..." : (isInGuide ? "Added to Guide!" : "Add to My Voting Guide"))
                 .font(.headline)
@@ -105,7 +105,7 @@ struct CandidateDetailView: View {
         .controlSize(.large)
         .tint(isInGuide ? .gray : .green)
         .padding(.horizontal)
-        .disabled(authToken.isEmpty || guideManager.isLoading || isInGuide)
+        .disabled(!session.isLoggedIn || guideManager.isLoading || isInGuide)
     }
 }
 
@@ -113,5 +113,6 @@ struct CandidateDetailView: View {
     NavigationStack {
         CandidateDetailView(candidate: .preview)
             .environmentObject(VotingGuideManager())
+            .environmentObject(AuthSession())
     }
 }

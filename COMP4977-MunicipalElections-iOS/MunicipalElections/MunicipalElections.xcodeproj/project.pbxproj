@@ -36,6 +36,10 @@
 		B4A200000000000000000025 /* MunicipalityDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000015 /* MunicipalityDetailView.swift */; };
 		B4A200000000000000000026 /* CandidatePhotoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000016 /* CandidatePhotoView.swift */; };
 		B4A200000000000000000027 /* ErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000017 /* ErrorBanner.swift */; };
+		B4A200000000000000000028 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000018 /* KeychainService.swift */; };
+		B4A200000000000000000029 /* JWT.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000019 /* JWT.swift */; };
+		B4A20000000000000000002A /* AuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A20000000000000000001A /* AuthSession.swift */; };
+		B4A20000000000000000002B /* FirebaseAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A20000000000000000001B /* FirebaseAuthService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -86,6 +90,10 @@
 		B4A200000000000000000015 /* MunicipalityDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MunicipalityDetailView.swift; sourceTree = "<group>"; };
 		B4A200000000000000000016 /* CandidatePhotoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CandidatePhotoView.swift; sourceTree = "<group>"; };
 		B4A200000000000000000017 /* ErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBanner.swift; sourceTree = "<group>"; };
+		B4A200000000000000000018 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		B4A200000000000000000019 /* JWT.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JWT.swift; sourceTree = "<group>"; };
+		B4A20000000000000000001A /* AuthSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSession.swift; sourceTree = "<group>"; };
+		B4A20000000000000000001B /* FirebaseAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAuthService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -188,6 +196,9 @@
 			isa = PBXGroup;
 			children = (
 				B4A200000000000000000011 /* AuthService.swift */,
+				B4A200000000000000000018 /* KeychainService.swift */,
+				B4A200000000000000000019 /* JWT.swift */,
+				B4A20000000000000000001A /* AuthSession.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -196,6 +207,7 @@
 			isa = PBXGroup;
 			children = (
 				B4A200000000000000000012 /* FirebaseService.swift */,
+				B4A20000000000000000001B /* FirebaseAuthService.swift */,
 			);
 			path = Firebase;
 			sourceTree = "<group>";
@@ -462,6 +474,10 @@
 				B4A200000000000000000025 /* MunicipalityDetailView.swift in Sources */,
 				B4A200000000000000000026 /* CandidatePhotoView.swift in Sources */,
 				B4A200000000000000000027 /* ErrorBanner.swift in Sources */,
+				B4A200000000000000000028 /* KeychainService.swift in Sources */,
+				B4A200000000000000000029 /* JWT.swift in Sources */,
+				B4A20000000000000000002A /* AuthSession.swift in Sources */,
+				B4A20000000000000000002B /* FirebaseAuthService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

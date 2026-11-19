@@ -110,4 +110,5 @@ private struct CandidateRow: View {
 #Preview {
     CandidateDirectoryView()
         .environmentObject(VotingGuideManager())
+        .environmentObject(AuthSession())
 }

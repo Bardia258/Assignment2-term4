@@ -38,36 +38,48 @@ final class APIClient {
 
     // MARK: - Saved candidates (A1 voting guide; replaced by Firestore selections in Phase 4)
 
-    func fetchSavedCandidates(token: String) async throws -> [SavedCandidate] {
-        try await get("api/savedcandidates", token: token)
+    func fetchSavedCandidates() async throws -> [SavedCandidate] {
+        try await get("api/savedcandidates", requiresAuth: true)
     }
 
-    func saveCandidate(id: Int, token: String) async throws -> SavedCandidate {
-        try await post("api/savedcandidates", body: SaveCandidateRequest(candidateId: id), token: token)
+    func saveCandidate(id: Int) async throws -> SavedCandidate {
+        try await post("api/savedcandidates", body: SaveCandidateRequest(candidateId: id), requiresAuth: true)
     }
 
-    func deleteSavedCandidate(id: Int, token: String) async throws {
-        _ = try await send(path: "api/savedcandidates/\(id)", method: "DELETE", token: token)
+    func deleteSavedCandidate(id: Int) async throws {
+        _ = try await send(path: "api/savedcandidates/\(id)", method: "DELETE", requiresAuth: true)
     }
 
     // MARK: - Request helpers
 
     func get<Response: Decodable>(_ path: String, query: [URLQueryItem] = [],
-                                  token: String? = nil) async throws -> Response {
-        try decode(try await send(path: path, query: query, token: token))
+                                  requiresAuth: Bool = false) async throws -> Response {
+        try decode(try await send(path: path, query: query, requiresAuth: requiresAuth))
     }
 
     func post<Body: Encodable, Response: Decodable>(_ path: String, body: Body,
-                                                    token: String? = nil) async throws -> Response {
-        try decode(try await send(path: path, method: "POST", body: try encoder.encode(body), token: token))
+                                                    requiresAuth: Bool = false) async throws -> Response {
+        try decode(try await send(path: path, method: "POST", body: try encoder.encode(body),
+                                  requiresAuth: requiresAuth))
     }
 
-    func post<Body: Encodable>(_ path: String, body: Body, token: String? = nil) async throws {
-        _ = try await send(path: path, method: "POST", body: try encoder.encode(body), token: token)
+    func post<Body: Encodable>(_ path: String, body: Body, requiresAuth: Bool = false) async throws {
+        _ = try await send(path: path, method: "POST", body: try encoder.encode(body), requiresAuth: requiresAuth)
     }
 
+    /// `requiresAuth` attaches the Keychain JWT as `Authorization: Bearer`.
+    /// A missing/expired token or a 401 posts `.sessionExpired` so `AuthSession` logs out.
     func send(path: String, method: String = "GET", query: [URLQueryItem] = [],
-              body: Data? = nil, token: String? = nil) async throws -> Data {
+              body: Data? = nil, requiresAuth: Bool = false) async throws -> Data {
+        var token: String?
+        if requiresAuth {
+            guard let stored = KeychainService.read(.authToken), !JWT.isExpired(stored) else {
+                NotificationCenter.default.post(name: .sessionExpired, object: nil)
+                throw APIError.sessionExpired
+            }
+            token = stored
+        }
+
         var components = URLComponents(url: Self.baseURL.appendingPathComponent(path),
                                        resolvingAgainstBaseURL: true)
         if !query.isEmpty { components?.queryItems = query }
@@ -95,8 +107,12 @@ final class APIClient {
             throw APIError.invalidResponse
         }
         guard (200..<300).contains(http.statusCode) else {
+            if http.statusCode == 401 && requiresAuth {
+                NotificationCenter.default.post(name: .sessionExpired, object: nil)
+                throw APIError.sessionExpired
+            }
             throw APIError.http(statusCode: http.statusCode, data: data, decoder: decoder,
-                                isAuthenticated: token != nil)
+                                isAuthenticated: requiresAuth)
         }
         return data
     }
@@ -119,6 +135,8 @@ struct APIError: LocalizedError {
     var errorDescription: String? { message }
 
     var isUnauthorized: Bool { statusCode == 401 }
+
+    static let sessionExpired = APIError(statusCode: 401, message: AuthSession.expiredMessage)
 
     static let invalidResponse = APIError(statusCode: 0,
         message: "The server sent a response the app couldn't read. Please try again later.")

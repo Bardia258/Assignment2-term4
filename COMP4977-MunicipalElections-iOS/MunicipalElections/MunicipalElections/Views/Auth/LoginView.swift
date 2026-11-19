@@ -2,8 +2,7 @@ import SwiftUI
 
 struct LoginView: View {
     @StateObject private var viewModel = AuthViewModel()
-    @AppStorage("authToken") var authToken: String = ""
-    @AppStorage("userEmail") var userEmail: String = ""
+    @EnvironmentObject private var session: AuthSession
 
     private enum Field { case email, password }
     @FocusState private var focusedField: Field?
@@ -86,15 +85,11 @@ struct LoginView: View {
     private func submit() {
         guard viewModel.isLoginValid, !viewModel.isLoading else { return }
         focusedField = nil
-        Task {
-            if let token = await viewModel.login() {
-                userEmail = viewModel.trimmedEmail
-                authToken = token
-            }
-        }
+        Task { await viewModel.login(session: session) }
     }
 }
 
 #Preview {
     LoginView()
+        .environmentObject(AuthSession())
 }

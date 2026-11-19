@@ -1,6 +1,10 @@
 import Foundation
 import Combine
 
+/// Drives the Login and Register forms. A successful sign-in is two steps:
+/// 1. the ASP.NET API returns a JWT, then
+/// 2. Firebase Auth signs in (or creates) the same email/password user,
+/// and only then is the session saved, so the app never has half a login.
 @MainActor
 final class AuthViewModel: ObservableObject {
     @Published var email = ""
@@ -12,13 +16,17 @@ final class AuthViewModel: ObservableObject {
     @Published private(set) var accountCreated = false
 
     private let authService: AuthService
+    private let firebaseAuth: FirebaseAuthService
     private var registeredCredentials: (email: String, password: String)?
 
-    init(authService: AuthService = .shared) {
+    init(authService: AuthService = .shared, firebaseAuth: FirebaseAuthService = .shared) {
         self.authService = authService
+        self.firebaseAuth = firebaseAuth
     }
 
     var trimmedEmail: String { email.trimmingCharacters(in: .whitespacesAndNewlines) }
+    /// Firebase stores emails in lower case and Firestore rules compare them, so normalize once here.
+    private var normalizedEmail: String { trimmedEmail.lowercased() }
     private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
 
     var isEmailValid: Bool {
@@ -46,43 +54,53 @@ final class AuthViewModel: ObservableObject {
         !trimmedName.isEmpty && isEmailValid && passwordRequirementMessage == nil
     }
 
-    func login() async -> String? {
-        guard !isLoading, isLoginValid else { return nil }
+    func login(session: AuthSession) async {
+        guard !isLoading, isLoginValid else { return }
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
         do {
-            return try await authService.login(email: trimmedEmail, password: password)
+            try await completeSignIn(email: normalizedEmail, password: password, session: session)
         } catch {
             errorMessage = error.localizedDescription
-            return nil
         }
     }
 
-    func register() async -> String? {
-        guard !isLoading else { return nil }
+    func register(session: AuthSession) async {
+        guard !isLoading else { return }
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
         do {
             if registeredCredentials == nil {
-                guard isRegisterValid else { return nil }
+                guard isRegisterValid else { return }
                 // Capture the credentials before either request suspends.
-                let credentials = (email: trimmedEmail, password: password)
+                let credentials = (email: normalizedEmail, password: password)
                 try await authService.register(fullName: trimmedName, email: credentials.email,
                                                password: credentials.password)
                 registeredCredentials = credentials
                 accountCreated = true
             }
-            // Retry only login if account creation succeeded but sign-in failed.
-            guard let registeredCredentials else { return nil }
-            return try await authService.login(email: registeredCredentials.email,
-                                               password: registeredCredentials.password)
+            // If the account exists but sign-in failed, "Finish Signing In" retries only this part.
+            guard let registeredCredentials else { return }
+            try await completeSignIn(email: registeredCredentials.email,
+                                     password: registeredCredentials.password, session: session)
         } catch {
             errorMessage = accountCreated
                 ? "Your account was created, but sign-in did not finish. Tap Finish Signing In to retry. \(error.localizedDescription)"
                 : error.localizedDescription
-            return nil
         }
+    }
+
+    private func completeSignIn(email: String, password: String, session: AuthSession) async throws {
+        let token = try await authService.login(email: email, password: password)
+        try await firebaseAuth.signInOrCreate(email: email, password: password)
+        do {
+            try session.signIn(token: token, email: email)
+        } catch {
+            firebaseAuth.signOut()
+            throw error
+        }
+        self.password = ""
     }
 }

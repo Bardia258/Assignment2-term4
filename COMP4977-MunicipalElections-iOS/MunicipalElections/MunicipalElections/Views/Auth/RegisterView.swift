@@ -2,8 +2,7 @@ import SwiftUI
 
 struct RegisterView: View {
     @StateObject private var viewModel = AuthViewModel()
-    @AppStorage("authToken") private var authToken = ""
-    @AppStorage("userEmail") private var userEmail = ""
+    @EnvironmentObject private var session: AuthSession
 
     private enum Field { case name, email, password }
     @FocusState private var focusedField: Field?
@@ -106,15 +105,11 @@ struct RegisterView: View {
     private func submit() {
         guard canSubmit else { return }
         focusedField = nil
-        Task {
-            if let token = await viewModel.register() {
-                userEmail = viewModel.trimmedEmail
-                authToken = token
-            }
-        }
+        Task { await viewModel.register(session: session) }
     }
 }
 
 #Preview {
     NavigationStack { RegisterView() }
+        .environmentObject(AuthSession())
 }
