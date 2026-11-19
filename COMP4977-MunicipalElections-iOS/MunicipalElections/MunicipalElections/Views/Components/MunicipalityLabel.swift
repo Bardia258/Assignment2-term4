@@ -23,6 +23,22 @@ struct MunicipalityLogo: View {
     }
 }
 
+/// Compact "City: Burnaby" toolbar badge for the user's selected municipality.
+struct CityBadge: View {
+    let municipality: Municipality?
+
+    var body: some View {
+        HStack(spacing: 6) {
+            MunicipalityLogo(logoUrl: municipality?.logoUrl, size: 22)
+            Text("City: \(municipality?.name ?? "Not set")")
+                .font(.subheadline.weight(.medium))
+                .lineLimit(1)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("City: \(municipality?.name ?? "Not set")")
+    }
+}
+
 struct MunicipalityLabel: View {
     let name: String
     let logoUrl: String?

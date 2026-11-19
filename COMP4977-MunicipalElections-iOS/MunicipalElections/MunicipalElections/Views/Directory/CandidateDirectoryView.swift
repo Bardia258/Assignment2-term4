@@ -1,16 +1,12 @@
 import SwiftUI
 
 struct CandidateDirectoryView: View {
+    @EnvironmentObject private var store: MunicipalityStore
     @StateObject private var viewModel = CandidateDirectoryViewModel()
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                if let error = viewModel.municipalityErrorMessage {
-                    ErrorBanner(message: "Municipality filter: \(error)") {
-                        Task { await viewModel.loadMunicipalities() }
-                    }
-                }
                 if let error = viewModel.errorMessage, !viewModel.candidates.isEmpty {
                     ErrorBanner(message: error) { Task { await viewModel.fetchCandidates() } }
                 }
@@ -19,13 +15,12 @@ struct CandidateDirectoryView: View {
             .searchable(text: $viewModel.searchText, prompt: "Search candidates by name")
             .navigationTitle("Directory")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { municipalityMenu }
+                ToolbarItem(placement: .topBarTrailing) {
+                    CityBadge(municipality: store.current)
+                }
             }
-            .task {
-                await viewModel.loadMunicipalities()
-            }
-            .task(id: viewModel.selectedMunicipalityId) {
-                await viewModel.fetchCandidates()
+            .task(id: store.current?.id) {
+                await viewModel.load(for: store.current)
             }
         }
     }
@@ -48,37 +43,18 @@ struct CandidateDirectoryView: View {
                     CandidateRow(candidate: candidate)
                 }
             }
-            .refreshable { await viewModel.refresh() }
+            .refreshable { await viewModel.fetchCandidates() }
             .overlay {
                 if viewModel.filteredCandidates.isEmpty {
                     if viewModel.searchText.isEmpty {
                         ContentUnavailableView("No Candidates", systemImage: "person.3",
-                            description: Text("No candidates are listed for this municipality yet."))
+                            description: Text("No candidates are listed for \(store.current?.name ?? "this city") yet."))
                     } else {
                         ContentUnavailableView.search(text: viewModel.searchText)
                     }
                 }
             }
         }
-    }
-
-    private var municipalityMenu: some View {
-        Menu {
-            Picker("Municipality", selection: $viewModel.selectedMunicipalityId) {
-                Text("All Municipalities").tag(nil as Int?)
-                ForEach(viewModel.municipalities) { municipality in
-                    Text(municipality.name).tag(Optional(municipality.id))
-                }
-            }
-        } label: {
-            HStack(spacing: 4) {
-                Text(viewModel.selectedMunicipalityName).lineLimit(1)
-                Image(systemName: "chevron.down")
-            }
-        }
-        .disabled(viewModel.municipalities.isEmpty)
-        .accessibilityLabel("Filter by municipality")
-        .accessibilityValue(viewModel.selectedMunicipalityName)
     }
 }
 
@@ -109,6 +85,7 @@ private struct CandidateRow: View {
 
 #Preview {
     CandidateDirectoryView()
+        .environmentObject(MunicipalityStore())
         .environmentObject(VotingGuideManager())
         .environmentObject(AuthSession())
 }

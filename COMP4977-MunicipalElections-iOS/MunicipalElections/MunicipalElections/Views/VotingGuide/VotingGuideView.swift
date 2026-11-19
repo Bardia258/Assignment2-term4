@@ -3,6 +3,12 @@ import SwiftUI
 struct VotingGuideView: View {
     @EnvironmentObject private var guideManager: VotingGuideManager
     @EnvironmentObject private var session: AuthSession
+    @EnvironmentObject private var store: MunicipalityStore
+
+    /// Selections from other cities stay saved but are hidden.
+    private var cityCandidates: [Candidate] {
+        guideManager.selectedCandidates.filter { $0.municipalityId == store.current?.id }
+    }
 
     var body: some View {
         NavigationStack {
@@ -10,19 +16,19 @@ struct VotingGuideView: View {
                 if !session.isLoggedIn {
                     ContentUnavailableView("Not Logged In", systemImage: "person.crop.circle.badge.questionmark",
                         description: Text("Log in from the Account tab to view and save your voting guide."))
-                } else if guideManager.isLoading && guideManager.selectedCandidates.isEmpty {
+                } else if guideManager.isLoading && cityCandidates.isEmpty {
                     ProgressView("Loading Guide...")
-                } else if let error = guideManager.errorMessage, guideManager.selectedCandidates.isEmpty {
+                } else if let error = guideManager.errorMessage, cityCandidates.isEmpty {
                     VStack(spacing: 12) {
                         Text(error).foregroundStyle(.red).multilineTextAlignment(.center)
                         Button("Retry") { Task { await guideManager.reload() } }
                     }
                     .padding()
-                } else if guideManager.selectedCandidates.isEmpty {
+                } else if cityCandidates.isEmpty {
                     ContentUnavailableView {
                         Label("Your guide is empty", systemImage: "checklist")
                     } description: {
-                        Text("Browse municipalities and add candidates to build your personalized voting guide.")
+                        Text("Add candidates from \(store.current?.name ?? "your city") to build your personalized voting guide.")
                     } actions: {
                         Button("Refresh") { Task { await guideManager.reload() } }
                     }
@@ -31,6 +37,9 @@ struct VotingGuideView: View {
                 }
             }
             .navigationTitle("My Voting Guide")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) { CityBadge(municipality: store.current) }
+            }
         }
     }
 
@@ -40,7 +49,7 @@ struct VotingGuideView: View {
             if let error = guideManager.errorMessage {
                 Text(error).font(.footnote).foregroundStyle(.red)
             }
-            ForEach(guideManager.selectedCandidates) { candidate in
+            ForEach(cityCandidates) { candidate in
                 NavigationLink(destination: CandidateDetailView(candidate: candidate)) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(candidate.name)
@@ -56,7 +65,7 @@ struct VotingGuideView: View {
                 }
             }
             .onDelete { offsets in
-                let ids = offsets.map { guideManager.selectedCandidates[$0].id }
+                let ids = offsets.map { cityCandidates[$0].id }
                 Task { await guideManager.remove(candidateIDs: ids) }
             }
             .deleteDisabled(guideManager.isLoading)

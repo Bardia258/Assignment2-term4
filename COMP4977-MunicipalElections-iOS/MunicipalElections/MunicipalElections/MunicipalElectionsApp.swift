@@ -22,12 +22,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 struct MunicipalElectionsApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var session = AuthSession()
+    @StateObject private var municipalityStore = MunicipalityStore()
     @StateObject private var guideManager = VotingGuideManager()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(session)
+                .environmentObject(municipalityStore)
                 .environmentObject(guideManager)
         }
     }

@@ -65,6 +65,14 @@ struct Candidate: Identifiable, Codable, Hashable {
     }
 }
 
+/// The signed-in user's Firestore document: `users/{lowercased email}`.
+struct UserProfile: Codable, Equatable {
+    let email: String
+    let municipalityId: Int
+    let municipalityName: String
+    let updatedAt: Date?
+}
+
 struct SavedCandidate: Decodable, Identifiable {
     let id: Int
     let candidateId: Int
@@ -72,6 +80,11 @@ struct SavedCandidate: Decodable, Identifiable {
 }
 
 #if DEBUG
+extension Municipality {
+    static let preview = Municipality(id: 1, name: "Pitt Meadows", province: "BC",
+        electionDate: "2026-10-17T00:00:00", description: "Sample municipality for previews.", logoUrl: nil)
+}
+
 extension Candidate {
     static let preview = Candidate(
         id: 1, name: "John Doe",

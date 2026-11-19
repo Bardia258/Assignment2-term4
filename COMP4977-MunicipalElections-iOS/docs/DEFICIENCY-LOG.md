@@ -30,11 +30,13 @@ Paths are relative to `MunicipalElections/MunicipalElections/`.
 | 21 | Auth state scattered | Seven views and `VotingGuideManager` read and wrote the `authToken`/`userEmail` keys directly. | One `AuthSession` environment object is the single source of truth. Views read `session.isLoggedIn`/`email`, and `VotingGuideManager` no longer touches UserDefaults. | 2 |
 | 25 | No identity for Firestore | Only the API knew who the user was, so Firestore rules had no way to identify them. | After API login/register, `FirebaseAuthService` signs in to Firebase Auth with the same email/password (creating the user the first time). The session is only saved when both succeed. Logout signs out of both. | 2 |
 | 26 | Instant logout | One tap logged the user out with no confirmation. | Profile asks for confirmation before logging out. | 2 |
+| 22 | No home municipality | Users browsed every city. There was no saved preference and API calls weren't scoped to a city. | On first login the user must pick a municipality, saved in Firestore `users/{email}` (owner-only rules in `firestore.rules`). Home, Profile and toolbars show "City: Burnaby". Every directory call sends `municipalityId` + `city`. Changing city in Profile saves to Firestore first, then reloads candidates and offices. Old-city rows are cleared and other cities' guide entries are hidden. | 3 |
+| 27 | Offices and seat counts never shown | The API returned positions with `seatsAvailable`, but the app never displayed them. | The Home tab lists each office on the ballot with its seat count and number of candidates, and links to that office's candidates. | 3 |
+| 28 | Duplicate municipality browsing | The Municipalities tab and the directory's municipality filter both re-listed every city's candidates, even though a voter only votes in one. | Replaced with a single home city (Home tab + city-scoped Directory). Late responses for a previous city are discarded. | 3 |
 
 ## Open (scheduled for a later phase)
 
 | # | Issue | Original problem (A1) | Planned fix | Phase |
 |---|-------|-----------------------|-------------|-------|
-| 22 | No home municipality | Users browse every city. There's no saved preference and API calls aren't scoped to a city. | Municipality picked at first login, stored in Firestore `users/{email}`, and every API call scoped to it. | 3 |
 | 23 | Voting guide depends on an A1-only endpoint | `/api/savedcandidates` exists only in the A1 web app, not the A2 API. | Replaced by Firestore `CandidateSelections` CRUD. | 4 |
 | 24 | Fixed sizes / iPhone-only layout | Hard-coded frames (photo height 300, etc.) and `NavigationStack` everywhere, even on iPad. | Size classes, adaptive grids and `NavigationSplitView` on iPad. | 6 |

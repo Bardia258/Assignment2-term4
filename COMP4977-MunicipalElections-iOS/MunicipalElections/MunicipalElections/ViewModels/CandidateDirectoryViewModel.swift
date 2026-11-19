@@ -1,27 +1,20 @@
 import Foundation
 import Combine
 
+/// Candidates for the user's selected city, with name search.
 @MainActor
 final class CandidateDirectoryViewModel: ObservableObject {
     @Published private(set) var candidates: [Candidate] = []
-    @Published private(set) var municipalities: [Municipality] = []
-    @Published var selectedMunicipalityId: Int?
     @Published var searchText: String = ""
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String? = nil
-    @Published private(set) var municipalityErrorMessage: String?
 
     private let api: APIClient
     private var currentRequestID = UUID()
-    /// Which filter `candidates` was loaded for, so a filter change doesn't show stale rows.
-    private var loadedMunicipalityId: Int??
+    private var municipality: Municipality?
 
     init(api: APIClient = .shared) {
         self.api = api
-    }
-
-    var selectedMunicipalityName: String {
-        municipalities.first { $0.id == selectedMunicipalityId }?.name ?? "All Municipalities"
     }
 
     var filteredCandidates: [Candidate] {
@@ -32,48 +25,33 @@ final class CandidateDirectoryViewModel: ObservableObject {
     /// Full-screen spinner only on first load; pull-to-refresh keeps the list on screen.
     var showsInitialLoading: Bool { isLoading && candidates.isEmpty }
 
-    func loadMunicipalities() async {
-        municipalityErrorMessage = nil
-        do {
-            let loaded = try await api.fetchMunicipalities()
-            try Task.checkCancellation()
-            municipalities = loaded
-            if let selectedMunicipalityId, !loaded.contains(where: { $0.id == selectedMunicipalityId }) {
-                self.selectedMunicipalityId = nil
-            }
-        } catch {
-            if !Task.isCancelled { municipalityErrorMessage = error.localizedDescription }
+    /// Called when the user's city changes. Old-city rows are cleared immediately.
+    func load(for municipality: Municipality?) async {
+        if municipality?.id != self.municipality?.id {
+            candidates = []
+            searchText = ""
         }
+        self.municipality = municipality
+        await fetchCandidates()
     }
 
     func fetchCandidates() async {
+        guard let municipality else { return }
         let requestID = UUID()
         currentRequestID = requestID
-        let municipalityId = selectedMunicipalityId
-        if loadedMunicipalityId != .some(municipalityId) { candidates = [] }
         isLoading = true
         errorMessage = nil
         defer { if currentRequestID == requestID { isLoading = false } }
         do {
-            let loaded: [Candidate]
-            if let municipalityId {
-                loaded = try await api.fetchCandidates(for: municipalityId)
-            } else {
-                loaded = try await api.fetchAllCandidates()
-            }
+            let loaded = try await api.fetchCandidates(for: municipality)
             try Task.checkCancellation()
-            guard currentRequestID == requestID, selectedMunicipalityId == municipalityId else { return }
-            candidates = loaded
-            loadedMunicipalityId = .some(municipalityId)
+            // Discard a response that arrives after the user switched city.
+            guard currentRequestID == requestID, self.municipality?.id == municipality.id else { return }
+            candidates = loaded.filter { $0.municipalityId == municipality.id }
         } catch {
-            if !Task.isCancelled && currentRequestID == requestID && selectedMunicipalityId == municipalityId {
+            if !Task.isCancelled && currentRequestID == requestID {
                 errorMessage = error.localizedDescription
             }
         }
-    }
-
-    func refresh() async {
-        await loadMunicipalities()
-        await fetchCandidates()
     }
 }

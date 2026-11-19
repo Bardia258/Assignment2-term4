@@ -26,14 +26,23 @@ final class APIClient {
         try await get("api/municipalities")
     }
 
-    func fetchCandidates(for municipalityId: Int) async throws -> [Candidate] {
-        try await get("api/candidates", query: [
-            URLQueryItem(name: "municipalityId", value: String(municipalityId))
-        ])
+    /// Candidates for the user's city only.
+    func fetchCandidates(for municipality: Municipality) async throws -> [Candidate] {
+        try await get("api/candidates", query: Self.cityQuery(for: municipality))
     }
 
-    func fetchAllCandidates() async throws -> [Candidate] {
-        try await get("api/candidates")
+    /// Offices (with seat counts) for the user's city only.
+    func fetchPositions(for municipality: Municipality) async throws -> [Position] {
+        try await get("api/positions", query: Self.cityQuery(for: municipality))
+    }
+
+    /// Every directory call is scoped to one city. `municipalityId` is what the
+    /// deployed API filters on today; `city` is sent too for the backend's city
+    /// filter. The backend rejects the pair only if they disagree, and both come
+    /// from the same municipality record.
+    static func cityQuery(for municipality: Municipality) -> [URLQueryItem] {
+        [URLQueryItem(name: "municipalityId", value: String(municipality.id)),
+         URLQueryItem(name: "city", value: municipality.name)]
     }
 
     // MARK: - Saved candidates (A1 voting guide; replaced by Firestore selections in Phase 4)
