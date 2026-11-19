@@ -86,6 +86,5 @@ private struct CandidateRow: View {
 #Preview {
     CandidateDirectoryView()
         .environmentObject(MunicipalityStore())
-        .environmentObject(VotingGuideManager())
-        .environmentObject(AuthSession())
+        .environmentObject(SelectionsStore())
 }

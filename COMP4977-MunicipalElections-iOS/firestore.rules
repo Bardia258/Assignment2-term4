@@ -16,6 +16,10 @@ service cloud.firestore {
       return request.auth.token.email.lower();
     }
 
+    function isNonEmptyString(value, maxLength) {
+      return value is string && value.size() > 0 && value.size() <= maxLength;
+    }
+
     // users/{email}: the user's profile and home municipality.
     // Document ID = lowercased email; only the owner can read or write it.
     match /users/{email} {
@@ -27,21 +31,49 @@ service cloud.firestore {
         && request.resource.data.email == myEmail()
         && request.resource.data.municipalityId is int
         && request.resource.data.municipalityId > 0
-        && request.resource.data.municipalityName is string
-        && request.resource.data.municipalityName.size() > 0
-        && request.resource.data.municipalityName.size() <= 100
+        && isNonEmptyString(request.resource.data.municipalityName, 100)
         && request.resource.data.updatedAt == request.time;
     }
 
-    // CandidateSelections/{selectionId}: PHASE 4 PLACEHOLDER.
-    // Owner-only access matched on userEmail. Field validation (required fields,
-    // notes <= 500 chars, types, timestamps) is added in Phase 4.
+    // CandidateSelections/{selectionId}: a user's saved candidates.
+    // Document ID = "{userEmail}_{candidateId}", so each user can save a
+    // candidate at most once (a second create hits an existing doc and is denied).
     match /CandidateSelections/{selectionId} {
+
+      function validSelection(data) {
+        return data.keys().hasAll(['id', 'userEmail', 'candidateId', 'candidateName', 'positionName',
+                                   'municipalityName', 'municipalityId', 'notes', 'dateCreated', 'dateModified'])
+          && data.keys().hasOnly(['id', 'userEmail', 'candidateId', 'candidateName', 'positionName',
+                                  'municipalityName', 'municipalityId', 'notes', 'dateCreated', 'dateModified',
+                                  'photoUrl'])
+          && data.id == selectionId
+          && data.userEmail == myEmail()
+          && data.candidateId is int && data.candidateId > 0
+          && isNonEmptyString(data.candidateName, 200)
+          && isNonEmptyString(data.positionName, 100)
+          && isNonEmptyString(data.municipalityName, 100)
+          && data.municipalityId is int && data.municipalityId > 0
+          && data.notes is string && data.notes.size() <= 500
+          && (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 500))
+          && data.dateCreated is timestamp
+          && data.dateModified == request.time;
+      }
+
+      // Read / delete: only your own records.
       allow read, delete: if signedIn() && resource.data.userEmail == myEmail();
-      allow create: if signedIn() && request.resource.data.userEmail == myEmail();
+
+      // Create: must be yours, valid, use the deterministic ID, and stamp dateCreated now.
+      allow create: if signedIn()
+        && request.resource.data.userEmail == myEmail()
+        && validSelection(request.resource.data)
+        && selectionId == myEmail() + '_' + string(request.resource.data.candidateId)
+        && request.resource.data.dateCreated == request.time;
+
+      // Update: only your own records, and only notes + dateModified may change.
       allow update: if signedIn()
         && resource.data.userEmail == myEmail()
-        && request.resource.data.userEmail == myEmail();
+        && validSelection(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['notes', 'dateModified']);
     }
   }
 }

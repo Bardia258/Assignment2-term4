@@ -3,8 +3,11 @@ import SwiftUI
 struct CandidateDetailView: View {
     let candidate: Candidate
 
-    @EnvironmentObject private var guideManager: VotingGuideManager
-    @EnvironmentObject private var session: AuthSession
+    @EnvironmentObject private var selections: SelectionsStore
+    @State private var editor: EditorRequest?
+    @State private var confirmingDelete = false
+    @State private var isDeleting = false
+    @State private var actionError: String?
 
     var body: some View {
         ScrollView {
@@ -49,7 +52,7 @@ struct CandidateDetailView: View {
                     contactSection
                 }
 
-                guideSection
+                selectionSection
             }
             .padding(.top)
             .padding(.bottom, 30)
@@ -78,41 +81,100 @@ struct CandidateDetailView: View {
     }
 
     @ViewBuilder
-    private var guideSection: some View {
-        let isInGuide = guideManager.isInGuide(candidate: candidate)
+    private var selectionSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Divider()
+            Text("My Selection").font(.headline)
 
-        if !session.isLoggedIn {
-            Text("Log in from the Account tab to save candidates to your voting guide.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal)
-        }
+            if let saved = selections.selection(for: candidate) {
+                Label("Saved \(saved.dateCreated.formatted(date: .abbreviated, time: .shortened))",
+                      systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                if !saved.notes.isEmpty {
+                    Text(saved.notes)
+                        .font(.callout)
+                        .padding(10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(.secondarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                HStack(spacing: 12) {
+                    Button { editor = .edit(saved) } label: {
+                        Label("Edit Selection", systemImage: "pencil").frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
 
-        if let error = guideManager.errorMessage {
-            Text(error)
-                .foregroundStyle(.red)
-                .padding(.horizontal)
-        }
+                    Button(role: .destructive) { confirmingDelete = true } label: {
+                        Label("Delete Selection", systemImage: "trash").frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(isDeleting)
+                }
+                .controlSize(.large)
+            } else {
+                Button { editor = .add(candidate) } label: {
+                    Label("Add Selection", systemImage: "plus.circle.fill")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .disabled(selections.isLoading)
+            }
 
-        Button {
-            Task { await guideManager.add(candidate: candidate) }
-        } label: {
-            Text(guideManager.isLoading ? "Updating Guide..." : (isInGuide ? "Added to Guide!" : "Add to My Voting Guide"))
-                .font(.headline)
-                .frame(maxWidth: .infinity)
+            if let actionError {
+                Text(actionError).font(.footnote).foregroundStyle(.red)
+            }
         }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.large)
-        .tint(isInGuide ? .gray : .green)
         .padding(.horizontal)
-        .disabled(!session.isLoggedIn || guideManager.isLoading || isInGuide)
+        .sheet(item: $editor) { mode in
+            SelectionEditorView(mode: mode.editorMode)
+        }
+        .confirmationDialog("Delete this selection?", isPresented: $confirmingDelete, titleVisibility: .visible) {
+            Button("Delete Selection", role: .destructive, action: deleteSelection)
+        } message: {
+            Text("\(candidate.name) and your notes will be removed from your selections.")
+        }
+    }
+
+    private func deleteSelection() {
+        guard let saved = selections.selection(for: candidate) else { return }
+        isDeleting = true
+        actionError = nil
+        Task {
+            do {
+                try await selections.delete(saved)
+            } catch {
+                actionError = error.localizedDescription
+            }
+            isDeleting = false
+        }
+    }
+}
+
+/// Identifiable wrapper so `.sheet(item:)` can present the editor in add or edit mode.
+private enum EditorRequest: Identifiable {
+    case add(Candidate)
+    case edit(CandidateSelection)
+
+    var id: String {
+        switch self {
+        case .add(let candidate): return "add-\(candidate.id)"
+        case .edit(let selection): return "edit-\(selection.id)"
+        }
+    }
+
+    var editorMode: SelectionEditorView.Mode {
+        switch self {
+        case .add(let candidate): return .add(candidate)
+        case .edit(let selection): return .edit(selection)
+        }
     }
 }
 
 #Preview {
     NavigationStack {
         CandidateDetailView(candidate: .preview)
-            .environmentObject(VotingGuideManager())
-            .environmentObject(AuthSession())
+            .environmentObject(SelectionsStore())
     }
 }

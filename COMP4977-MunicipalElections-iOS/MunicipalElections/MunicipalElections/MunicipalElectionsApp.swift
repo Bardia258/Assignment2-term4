@@ -23,14 +23,14 @@ struct MunicipalElectionsApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var session = AuthSession()
     @StateObject private var municipalityStore = MunicipalityStore()
-    @StateObject private var guideManager = VotingGuideManager()
+    @StateObject private var selections = SelectionsStore()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(session)
                 .environmentObject(municipalityStore)
-                .environmentObject(guideManager)
+                .environmentObject(selections)
         }
     }
 }

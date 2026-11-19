@@ -73,10 +73,28 @@ struct UserProfile: Codable, Equatable {
     let updatedAt: Date?
 }
 
-struct SavedCandidate: Decodable, Identifiable {
-    let id: Int
+/// A candidate the user saved, stored in Firestore `CandidateSelections/{id}`.
+/// `id` is "{userEmail}_{candidateId}", so one user can't save the same candidate twice.
+struct CandidateSelection: Identifiable, Codable, Equatable {
+    static let maxNotesLength = 500
+
+    let id: String
+    let userEmail: String
     let candidateId: Int
-    let candidate: Candidate
+    let candidateName: String
+    let positionName: String
+    let municipalityName: String
+    let municipalityId: Int
+    let photoUrl: String?
+    var notes: String
+    let dateCreated: Date
+    var dateModified: Date
+
+    static func documentID(userEmail: String, candidateId: Int) -> String {
+        "\(userEmail.lowercased())_\(candidateId)"
+    }
+
+    var wasEdited: Bool { dateModified.timeIntervalSince(dateCreated) > 1 }
 }
 
 #if DEBUG

@@ -45,20 +45,6 @@ final class APIClient {
          URLQueryItem(name: "city", value: municipality.name)]
     }
 
-    // MARK: - Saved candidates (A1 voting guide; replaced by Firestore selections in Phase 4)
-
-    func fetchSavedCandidates() async throws -> [SavedCandidate] {
-        try await get("api/savedcandidates", requiresAuth: true)
-    }
-
-    func saveCandidate(id: Int) async throws -> SavedCandidate {
-        try await post("api/savedcandidates", body: SaveCandidateRequest(candidateId: id), requiresAuth: true)
-    }
-
-    func deleteSavedCandidate(id: Int) async throws {
-        _ = try await send(path: "api/savedcandidates/\(id)", method: "DELETE", requiresAuth: true)
-    }
-
     // MARK: - Request helpers
 
     func get<Response: Decodable>(_ path: String, query: [URLQueryItem] = [],
@@ -196,8 +182,4 @@ private struct APIProblem: Decodable {
     let title: String?
     let detail: String?
     let errors: [String: [String]]?
-}
-
-private struct SaveCandidateRequest: Encodable {
-    let candidateId: Int
 }

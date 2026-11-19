@@ -4,7 +4,7 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject private var session: AuthSession
     @EnvironmentObject private var store: MunicipalityStore
-    @EnvironmentObject private var guideManager: VotingGuideManager
+    @EnvironmentObject private var selections: SelectionsStore
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -35,8 +35,10 @@ struct ContentView: View {
         .task(id: session.token) {
             await store.load(for: session.isLoggedIn ? session.email : nil)
         }
-        .task(id: session.token) {
-            await guideManager.load(for: session.token)
+        // Selections follow both the user and the city; changing either reloads them.
+        .task(id: "\(session.email ?? "")|\(store.current?.id ?? 0)") {
+            await selections.load(email: session.isLoggedIn ? session.email : nil,
+                                  municipality: store.current)
         }
         // Timers don't run while suspended, so re-check the JWT when the app comes back.
         .onChange(of: scenePhase) { _, phase in
@@ -62,8 +64,8 @@ struct MainTabView: View {
             CandidateDirectoryView()
                 .tabItem { Label("Directory", systemImage: "magnifyingglass") }
 
-            VotingGuideView()
-                .tabItem { Label("My Guide", systemImage: "checklist") }
+            SelectionsView()
+                .tabItem { Label("Selections", systemImage: "checklist") }
 
             ProfileView()
                 .tabItem { Label("Profile", systemImage: "person.circle") }
@@ -75,5 +77,5 @@ struct MainTabView: View {
     ContentView()
         .environmentObject(AuthSession())
         .environmentObject(MunicipalityStore())
-        .environmentObject(VotingGuideManager())
+        .environmentObject(SelectionsStore())
 }
