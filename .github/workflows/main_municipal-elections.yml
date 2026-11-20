@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 env:
-  PROJECT_PATH: COMP4976-MunicipalElections-CSharp/MunicipalElections.Web/MunicipalElections.Web.csproj
+  PROJECT_PATH: COMP4977-MunicipalElections-iOS/MunicipalElections.Web/MunicipalElections.Web.csproj
   PUBLISH_RUNTIME: ${{ inputs.runtime }}
 
 jobs:

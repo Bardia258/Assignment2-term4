@@ -1,0 +1,14 @@
+<PageTitle>Municipality not found</PageTitle>
+
+<div class="text-center py-5">
+    <h1 class="h2">Municipality not found</h1>
+    <p class="lead text-secondary">
+        We couldn't find a municipality called <strong>"@Slug"</strong>.
+    </p>
+    <p>Check the address, or choose a municipality from the list.</p>
+    <a class="btn btn-primary" href="">See all municipalities</a>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Slug { get; set; } = "";
+}

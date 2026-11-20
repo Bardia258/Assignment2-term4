@@ -1,0 +1,68 @@
+@*
+    Dark mode switch, ported from A1's _ThemeToggle + theme.js. A1 swapped the button's text and
+    aria-label between "Dark mode" and "Light mode", so the control's name changed under the
+    user. Here the label stays "Dark mode" and aria-pressed reports whether it's on.
+*@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject ILogger<ThemeToggle> Logger
+
+<button type="button" class="btn btn-sm theme-toggle @(dark ? "btn-light" : "btn-outline-light")"
+        aria-pressed="@(dark ? "true" : "false")" disabled="@(!ready)" @onclick="ToggleAsync">
+    <span aria-hidden="true">@(dark ? "☾" : "☀")</span> Dark mode
+</button>
+
+@code {
+    private bool dark;
+    private bool ready;
+    private DotNetObjectReference<ThemeToggle>? selfRef;
+    private int? subscriptionId;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            dark = await JS.InvokeAsync<string>("memsTheme.current") == "dark";
+            selfRef = DotNetObjectReference.Create(this);
+            subscriptionId = await JS.InvokeAsync<int>("memsTheme.subscribe", selfRef);
+            ready = true;
+            StateHasChanged();
+        }
+        catch (JSException ex)
+        {
+            Logger.ThemeFailed(ex); // button stays disabled; the site still works in the default theme
+        }
+    }
+
+    private async Task ToggleAsync()
+    {
+        try
+        {
+            dark = await JS.InvokeAsync<string>("memsTheme.set", dark ? "light" : "dark") == "dark";
+        }
+        catch (JSException ex)
+        {
+            Logger.ThemeFailed(ex);
+        }
+    }
+
+    /// <summary>Called by theme.js when the system theme or another tab changes it.</summary>
+    [JSInvokable]
+    public void OnThemeChanged(string theme)
+    {
+        dark = theme == "dark";
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (subscriptionId is { } id) await JS.InvokeVoidAsync("memsTheme.unsubscribe", id);
+        }
+        catch (JSDisconnectedException) { }
+        catch (JSException) { }
+        selfRef?.Dispose();
+    }
+}

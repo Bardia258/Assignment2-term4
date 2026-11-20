@@ -28,19 +28,25 @@ api.WithEnvironment("Cors__AllowedOrigins__0", publicSite.GetEndpoint("https"))
 // Browser WebAssembly cannot read Aspire's server environment/service-discovery variables.
 // Its owner configures an HttpClient with the API's browser-reachable HTTPS URL (see report).
 
-// Optional development-only seed. Values are supplied via AppHost user secrets or environment.
+// Development launch profiles enable the shared assignment password automatically.
+// Custom-password mode continues to use AppHost user secrets or environment values.
 if (builder.Configuration.GetValue<bool>("Mems:Seed:Enabled"))
 {
     if (!builder.ExecutionContext.IsRunMode)
         throw new InvalidOperationException("Development seed parameters must not be published.");
     api.WithEnvironment("Mems__Seed__Enabled", "true");
-    foreach (var (account, parameter) in new[]
+    var useDefaults = builder.Configuration.GetValue<bool>("Mems:Seed:UseDefaultPasswords");
+    api.WithEnvironment("Mems__Seed__UseDefaultPasswords", useDefaults ? "true" : "false");
+    if (!useDefaults)
     {
-        ("Super", "seed-super-password"), ("Burnabyadmin", "seed-burnaby-password"),
-        ("Surreyadmin", "seed-surrey-password"), ("Richmondadmin", "seed-richmond-password"),
-        ("pm", "seed-pm-password")
-    })
-        api.WithEnvironment($"Mems__Seed__Passwords__{account}", builder.AddParameter(parameter, secret: true));
+        foreach (var (account, parameter) in new[]
+        {
+            ("Super", "seed-super-password"), ("Burnabyadmin", "seed-burnaby-password"),
+            ("Surreyadmin", "seed-surrey-password"), ("Richmondadmin", "seed-richmond-password"),
+            ("pm", "seed-pm-password")
+        })
+            api.WithEnvironment($"Mems__Seed__Passwords__{account}", builder.AddParameter(parameter, secret: true));
+    }
 }
 
 builder.Build().Run();

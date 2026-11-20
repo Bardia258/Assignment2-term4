@@ -7,6 +7,10 @@
 <PageStatus Busy="Busy" Error="@Error" />
 @if (Loaded && _model is not null)
 {
+    @if (!Id.HasValue)
+    {
+        <p class="text-body-secondary">An administrator account is created with the municipality. Its username is the tenant slug followed by <code>admin</code>, for example <code>testadmin</code>.</p>
+    }
     <EditForm Model="_model" OnValidSubmit="Save" FormName="municipality" class="card card-body admin-form">
         <DataAnnotationsValidator /><ValidationSummary />
         <fieldset disabled="@(Busy || !InteractiveReady)">

@@ -1,0 +1,13 @@
+@* Friendly, non-technical error message. Never pass exception details or stack traces here. *@
+<div class="alert alert-danger d-flex flex-wrap align-items-center gap-3" role="alert">
+    <span class="flex-grow-1">@Message</span>
+    @if (OnRetry.HasDelegate)
+    {
+        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="OnRetry">Try again</button>
+    }
+</div>
+
+@code {
+    [Parameter] public string Message { get; set; } = "Something went wrong. Please try again.";
+    [Parameter] public EventCallback OnRetry { get; set; }
+}

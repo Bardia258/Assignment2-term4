@@ -1,11 +1,20 @@
 # MEMS Blazor administration
 
 The .NET 10 Interactive Server application hosts the shared administrative
-experience at `/admin`. It uses the Task 1 SQL Server database and Identity
-accounts. Assignment 1's MVC/SQLite/JWT application and the iOS application
-remain separate and unchanged.
+experience at `/admin`. It uses the MEMS SQL Server database and Identity
+accounts. The API-only iOS backend has its own SQLite/JWT configuration and
+lives separately under `COMP4977-MunicipalElections-iOS`.
 
 ## Run locally
+
+For the assignment demo, start `MEMS.AppHost` with its `https` or `http`
+development launch profile. It automatically initializes the database and gives
+`Super` (also `super`), `pm`, `Burnabyadmin`, `Surreyadmin`, and `Richmondadmin`
+the password `P@$$w0rd`. Existing seeded accounts receive that same password
+on startup, and their roles/municipality assignments stay intact. No password
+setup commands are required. Sign in at `https://localhost:7052/admin/login`.
+
+For a standalone Admin host instead of Aspire:
 
 From `COMP4976-MunicipalElections-CSharp`:
 
@@ -17,8 +26,8 @@ dotnet run --project MEMS.Admin --launch-profile https
 Open `https://localhost:7052/admin`. Alternatively supply
 `ConnectionStrings__MEMS` through secure environment configuration. The Admin
 host has its own user-secrets store; the Data project's design-time secrets are
-not automatically read by this host. No connection strings or initial passwords
-are embedded in source.
+not automatically read by this host. Connection strings use external
+configuration; the shared assignment password applies only to development seeding.
 
 Apply the existing migration and provision development accounts using
 [`MEMS.Data/README.md`](../MEMS.Data/README.md) before signing in. The Admin app
@@ -26,7 +35,7 @@ does not create, migrate, or seed the database on startup. Use the same new MEMS
 database as `MEMS.Api`, never the original SQLite database.
 
 For the completed local orchestration, use the
-[Assignment 2 backend report](../docs/ASSIGNMENT2-BACKEND.md). AppHost supplies
+[solution setup](../docs/README.md). AppHost supplies
 the SQL connection, waits for the API's development migration startup, and sets
 the API image origin to this Admin host automatically.
 
@@ -59,7 +68,7 @@ Sign-in/out use antiforgery-protected HTTP POSTs at
 `/admin/account/sign-in` and `/admin/account/sign-out`. The UI has a separate
 secure, HttpOnly, same-site `__Host-MEMS.AdminUI` cookie and a separate data
 protection application name. It shares the Identity store and role/municipality
-resolver from Task 2; it does not forward browser cookies to `MEMS.Api` or use
+resolver; it does not forward browser cookies to `MEMS.Api` or use
 the legacy JWTs. Sessions have an absolute 30-minute lifetime, no persistent
 cookie, login throttling, and Identity lockout. Logout rotates the user's
 security stamp, invalidating that user's other MEMS sessions too.
@@ -73,9 +82,9 @@ write guards enforce the tenant boundary independently of the visible controls.
 Circuit authentication is also revalidated every 30 seconds. A forged record
 ID, destination municipality, or position is checked against stored ownership.
 
-The password-based flow follows Task 2. Accounts enrolled in two-factor
+Accounts enrolled in two-factor
 authentication are denied rather than bypassing their second factor; a 2FA
-enrollment/challenge UI is not included in this milestone.
+enrollment/challenge UI is not implemented.
 
 ## Uploaded images
 
@@ -98,29 +107,11 @@ references are checked before cleanup. Public election images are served at
 The API's `Images:BaseUrl` points at the Admin HTTPS origin when orchestrated by
 AppHost, so public API DTOs resolve these image paths. Configure it explicitly
 for other hosting arrangements. Existing Assignment 1 image files are not copied
-or modified; the partner's public UI integration remains separate.
+or modified. The public UI uses the API's image URLs.
 
-## Verification
+## Build
 
-```powershell
-dotnet build MEMS.Admin
-dotnet build MEMS.Admin.Tests
-pwsh MEMS.Admin.Tests/bin/Debug/net10.0/playwright.ps1 install chromium
-dotnet test MEMS.Admin.Tests
-```
-
-Tests use real ASP.NET Identity/cookies/antiforgery and EF's InMemory provider;
-they do not substitute an always-authorized test authentication scheme. The
-browser test runs real Chromium against a temporary HTTPS Kestrel host with a
-test-only certificate. It checks CRUD, uploads, validation, destructive-action
-confirmation, tenant access, and desktop/mobile rendering. Browser screenshots
-are written under the test output's ignored `TestResults/browser` directory.
-For service/HTTP tests without a browser, use
-`dotnet test MEMS.Admin.Tests --filter 'FullyQualifiedName!~BrowserTests'`.
-
-InMemory tests verify application behavior, not SQL Server transactions or SQL
-constraints. The existing SQL Server integration check in `MEMS.Data.Tests`
-requires an explicitly configured disposable database as described in its
-README. Task 4 adds an opt-in live Aspire/Admin/SQL/API test; the consolidated
-backend report distinguishes its results from Azure deployment and public UI
-checks. The unconfigured live test is explicitly skipped.
+From the C# course folder, run `dotnet build MEMS.Admin/MEMS.Admin.csproj` or
+`dotnet build MEMS.sln`. The former Admin/Data/API test projects are not present
+in the current solution. See the [solution guide](../docs/README.md) for the
+scope of previous verification and current limitations.

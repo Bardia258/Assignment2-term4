@@ -1,0 +1,38 @@
+@*
+    Toggle buttons for narrowing the candidate list to one position ("All positions" clears it).
+    Each button shows how many candidates are running for that position.
+*@
+<div class="d-flex flex-wrap gap-2" role="group" aria-label="Filter by position">
+    <button type="button" class="btn btn-sm @ButtonClass(SelectedPositionId is null)"
+            aria-pressed="@(SelectedPositionId is null ? "true" : "false")"
+            @onclick="() => SelectAsync(null)">
+        All positions <span class="badge rounded-pill @BadgeClass(SelectedPositionId is null)">@TotalCount</span>
+    </button>
+    @foreach (var option in Options)
+    {
+        var selected = option.PositionId == SelectedPositionId;
+        <button type="button" class="btn btn-sm @ButtonClass(selected)" @key="option.PositionId"
+                aria-pressed="@(selected ? "true" : "false")"
+                @onclick="() => SelectAsync(option.PositionId)">
+            @option.Name <span class="badge rounded-pill @BadgeClass(selected)">@option.CandidateCount</span>
+        </button>
+    }
+</div>
+
+@code {
+    public sealed record Option(int PositionId, string Name, int CandidateCount);
+
+    /// <summary>Positions in display order.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<Option> Options { get; set; } = [];
+    [Parameter] public int? SelectedPositionId { get; set; }
+    [Parameter] public EventCallback<int?> SelectedPositionIdChanged { get; set; }
+
+    private int TotalCount => Options.Sum(o => o.CandidateCount);
+
+    private Task SelectAsync(int? positionId) =>
+        positionId == SelectedPositionId ? Task.CompletedTask : SelectedPositionIdChanged.InvokeAsync(positionId);
+
+    private static string ButtonClass(bool selected) => selected ? "btn-primary" : "btn-outline-primary";
+
+    private static string BadgeClass(bool selected) => selected ? "text-bg-light" : "text-bg-primary";
+}

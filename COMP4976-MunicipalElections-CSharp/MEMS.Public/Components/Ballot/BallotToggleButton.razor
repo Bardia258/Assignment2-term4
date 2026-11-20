@@ -1,0 +1,108 @@
+@*
+    Add / Remove a candidate from the voter's guide (sessionStorage only, see IBallotSessionService).
+    Ported from A1's "+ Add to Guide" link, which was a GET request that reloaded the page, never
+    showed whether the candidate was already chosen, and had no seat limit.
+
+    States: "+ Add to guide" | "Remove from guide" (already chosen) | disabled "<Position> is full"
+    when the position already has as many picks as it has seats.
+*@
+@implements IDisposable
+@using MEMS.Public.Services.Ballot
+@inject IBallotSessionService Ballot
+@inject ILogger<BallotToggleButton> Logger
+
+@* One <button> element for every state, so keyboard focus stays on it after Add/Remove. *@
+<button type="button" class="btn btn-sm @Variant @BlockClass" disabled="@(CurrentState is State.Loading or State.Full)"
+        aria-label="@AriaLabel" aria-describedby="@(CurrentState == State.Full ? HelpId : null)" @onclick="ToggleAsync">
+    @Text
+</button>
+@if (CurrentState == State.Full)
+{
+    <div id="@HelpId" class="form-text small mt-1">You've chosen @Seats of @Seats. Remove one to pick someone else.</div>
+}
+
+@code {
+    [Parameter, EditorRequired] public CandidateResponse Candidate { get; set; } = default!;
+
+    /// <summary>Full-width button (detail page sidebar).</summary>
+    [Parameter] public bool Block { get; set; }
+
+    private BallotSelections? selections;
+    private bool busy;
+
+    private string Slug => Candidate.Municipality.Slug;
+    private int Seats => Candidate.Position.SeatsAvailable;
+
+    private enum State { Loading, Selected, Full, Available }
+
+    private State CurrentState => selections switch
+    {
+        null => State.Loading,
+        _ when selections.Contains(Candidate.Id) => State.Selected,
+        _ when selections.CountFor(Candidate.PositionId) >= Seats => State.Full,
+        _ => State.Available,
+    };
+
+    private string Variant => CurrentState switch
+    {
+        State.Selected => "btn-outline-danger",
+        State.Available => "btn-success",
+        _ => "btn-outline-secondary",
+    };
+
+    private string Text => CurrentState switch
+    {
+        State.Selected => "✓ In your guide · Remove",
+        State.Full => $"{Candidate.PositionTitle} is full",
+        _ => "+ Add to guide",
+    };
+
+    private string? AriaLabel => CurrentState switch
+    {
+        State.Selected => $"Remove {Candidate.Name} from your voting guide",
+        State.Available => $"Add {Candidate.Name} to your voting guide",
+        _ => null,
+    };
+    private string BlockClass => Block ? "w-100" : "";
+    private string HelpId => $"ballot-full-{Candidate.Id}";
+
+    protected override void OnInitialized() => Ballot.Changed += OnBallotChanged;
+
+    protected override async Task OnParametersSetAsync() => selections = await Ballot.GetAsync(Slug);
+
+    private async void OnBallotChanged(string slug)
+    {
+        if (slug != Slug) return;
+        try
+        {
+            selections = await Ballot.GetAsync(Slug);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Logger.GuideRefreshFailed(ex, "guide button", Slug);
+        }
+    }
+
+    private async Task ToggleAsync()
+    {
+        // Ignore repeat clicks instead of disabling: disabling a focused button can drop keyboard focus.
+        if (busy || CurrentState is not (State.Selected or State.Available)) return;
+        busy = true;
+        try
+        {
+            if (CurrentState == State.Selected)
+            {
+                await Ballot.RemoveAsync(Slug, Candidate.Id);
+            }
+            else if (await Ballot.AddAsync(Slug, Candidate) == BallotAddResult.LimitReached)
+            {
+                // Another button filled the last seat first; the Changed event re-renders this one as "full".
+                Logger.SeatLimitReached(Candidate.PositionId);
+            }
+        }
+        finally { busy = false; }
+    }
+
+    public void Dispose() => Ballot.Changed -= OnBallotChanged;
+}

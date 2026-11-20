@@ -1,0 +1,314 @@
+@*
+    Every position on the ballot for one municipality (in ballot order), each with its candidates,
+    plus a name search and a position filter.
+
+    Data is loaded once per municipality (positions and candidates in parallel, scoped to that
+    municipality only); search and filtering then run in the browser, so typing never waits on the
+    network. The API also supports ?name= and ?positionId= if the data ever grows too large for this.
+
+    The parent owns the filter state (it keeps it in the URL): this component reads Filter and
+    reports edits through FilterChanged.
+*@
+@implements IDisposable
+@using MEMS.Public.Services
+@using MEMS.Public.Services.Api
+@using MEMS.Public.Services.Ballot
+@using MEMS.Public.Components.Forms
+@inject IPositionApiClient PositionApi
+@inject ICandidateApiClient CandidateApi
+@inject IBallotSessionService Ballot
+@inject ILogger<CandidateDirectory> Logger
+
+@if (errorMessage is not null)
+{
+    <ErrorAlert Message="@errorMessage" OnRetry="ReloadAsync" />
+}
+else if (sections is null)
+{
+    <LoadingSpinner Message="Loading candidates…" />
+}
+else if (sections.Count == 0)
+{
+    <div class="alert alert-info">
+        No positions have been announced for this election yet. Please check back later.
+    </div>
+}
+else
+{
+    var view = BuildView();
+
+    var searchErrors = searchContext.GetValidationMessages(SearchField).ToList();
+
+    @* Enter submits the form, which does nothing extra: results already update as you type. *@
+    <EditForm EditContext="searchContext" class="card card-body bg-body-tertiary mb-3 d-print-none"
+              role="search" aria-label="Find candidates">
+        <DataAnnotationsValidator />
+        <div class="row g-3">
+            <div class="col-12 col-lg-4">
+                <label for="candidate-search" class="form-label fw-semibold">Search by name</label>
+                <input id="candidate-search" type="search" @ref="searchInput" autocomplete="off"
+                       class="form-control @searchContext.FieldCssClass(SearchField)"
+                       placeholder="e.g. Moreno" aria-invalid="@(searchErrors.Count > 0 ? "true" : null)"
+                       aria-describedby="@(searchErrors.Count > 0 ? "candidate-search-error candidate-results" : "candidate-results")"
+                       @bind="searchForm.Search" @bind:event="oninput" @bind:after="OnSearchChangedAsync" />
+                @foreach (var error in searchErrors)
+                {
+                    <div id="candidate-search-error" class="invalid-feedback d-block">@error</div>
+                }
+            </div>
+            <div class="col-12 col-lg-8">
+                <span class="form-label fw-semibold d-block">Position</span>
+                <PositionFilter Options="filterOptions" SelectedPositionId="view.PositionId"
+                                SelectedPositionIdChanged="OnPositionChangedAsync" />
+            </div>
+        </div>
+    </EditForm>
+
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <p id="candidate-results" class="text-secondary small mb-0" role="status" aria-live="polite">
+            @if (view.IsFiltered)
+            {
+                @($"Showing {view.ShownCount} of {CountText(totalCount)}")
+            }
+            else
+            {
+                @CountText(totalCount)
+            }
+        </p>
+        @if (view.IsFiltered)
+        {
+            <button type="button" class="btn btn-link btn-sm p-0 d-print-none" @onclick="ClearFiltersAsync">
+                Clear filters
+            </button>
+        }
+    </div>
+
+    @if (view.ShownCount == 0 && view.Term is not null)
+    {
+        <div class="text-center py-5">
+            <p class="lead mb-2">No candidates match “@view.Term”@(view.PositionName is null ? "" : $" for {view.PositionName}").</p>
+            <p class="text-secondary">Check the spelling, or try part of a first or last name.</p>
+            <button type="button" class="btn btn-outline-primary" @onclick="ClearFiltersAsync">Clear filters</button>
+        </div>
+    }
+
+    @foreach (var section in view.Sections)
+    {
+        <section class="mb-4" aria-labelledby="position-@section.Position.Id" @key="section.Position.Id">
+            <div class="d-flex flex-wrap align-items-baseline gap-2 border-bottom pb-2 mb-3">
+                <h2 class="h4 mb-0" id="position-@section.Position.Id">@section.Position.Name</h2>
+                <span class="badge text-bg-light border">@SeatsText(section.Position.SeatsAvailable)</span>
+                @if (ChosenFor(section.Position.Id) is var chosen and > 0)
+                {
+                    <a class="badge @(chosen >= section.Position.SeatsAvailable ? "text-bg-success" : "text-bg-success-subtle text-success-emphasis") text-decoration-none"
+                       href="@($"{Municipality.Slug}/guide")">
+                        @chosen of @section.Position.SeatsAvailable in your guide
+                    </a>
+                }
+                <span class="text-secondary small ms-auto">@CountText(section.Candidates.Count)</span>
+            </div>
+
+            @if (section.Candidates.Count == 0)
+            {
+                <p class="text-secondary">No candidates have registered for this position yet.</p>
+            }
+            else
+            {
+                <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+                    @foreach (var candidate in section.Candidates)
+                    {
+                        <div class="col" @key="candidate.Id">
+                            <CandidateCard Candidate="candidate" />
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public MunicipalityResponse Municipality { get; set; } = default!;
+    [Parameter] public CandidateFilterState Filter { get; set; } = CandidateFilterState.Empty;
+    [Parameter] public EventCallback<CandidateFilterState> FilterChanged { get; set; }
+
+    private sealed record PositionSection(PositionResponse Position, IReadOnlyList<CandidateResponse> Candidates);
+
+    private sealed record DirectoryView(IReadOnlyList<PositionSection> Sections, int ShownCount, string? Term,
+        int? PositionId, string? PositionName)
+    {
+        public bool IsFiltered => Term is not null || PositionId is not null;
+    }
+
+    // Loaded data (all positions in ballot order, with all their candidates).
+    private IReadOnlyList<PositionSection>? sections;
+    private IReadOnlyList<PositionFilter.Option> filterOptions = [];
+    private int totalCount;
+    private string? errorMessage;
+    private string? loadedSlug;
+    private CancellationTokenSource? cts;
+
+    // The text box is the source of truth while typing; it only takes the URL value when that
+    // changes from outside (back/forward, a shared link, "Clear filters").
+    private readonly CandidateSearchForm searchForm = new();
+    private EditContext searchContext = default!;
+    private FieldIdentifier SearchField => FieldIdentifier.Create(() => searchForm.Search);
+    private BallotSelections? selections;
+    private ElementReference searchInput;
+    private CandidateFilterState? lastFilter;
+
+    protected override void OnInitialized()
+    {
+        searchContext = new EditContext(searchForm);
+        searchContext.SetFieldCssClassProvider(new BootstrapFieldCssClassProvider());
+        Ballot.Changed += OnBallotChanged;
+    }
+
+    private int ChosenFor(int positionId) => selections?.CountFor(positionId) ?? 0;
+
+    private async void OnBallotChanged(string slug)
+    {
+        if (slug != Municipality.Slug) return;
+        try
+        {
+            selections = await Ballot.GetAsync(slug);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Logger.GuideRefreshFailed(ex, "directory counts", slug);
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Filter != lastFilter)
+        {
+            lastFilter = Filter;
+            if ((Filter.Search ?? "") != (searchForm.Search ?? ""))
+            {
+                searchForm.Search = Filter.Search;
+                searchContext.NotifyFieldChanged(SearchField); // clears any old error
+            }
+        }
+
+        if (Municipality.Slug == loadedSlug) return;
+        await LoadAsync();
+    }
+
+    private Task ReloadAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var slug = Municipality.Slug;
+        loadedSlug = slug;
+        sections = null;
+        errorMessage = null;
+
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = new CancellationTokenSource();
+        var token = cts.Token;
+
+        try
+        {
+            var positionsTask = PositionApi.GetPositionsAsync(slug, token);
+            var candidatesTask = CandidateApi.GetCandidatesAsync(new CandidateQuery { MunicipalitySlug = slug }, token);
+            await Task.WhenAll(positionsTask, candidatesTask);
+            if (token.IsCancellationRequested) return;
+
+            var byPosition = candidatesTask.Result.ToLookup(c => c.PositionId);
+            sections = PositionOrder.Sort(positionsTask.Result)
+                .Select(p => new PositionSection(p, byPosition[p.Id].ToList()))
+                .ToList();
+            filterOptions = sections
+                .Select(s => new PositionFilter.Option(s.Position.Id, s.Position.Name, s.Candidates.Count))
+                .ToList();
+            totalCount = sections.Sum(s => s.Candidates.Count);
+
+            // Keep the guide's seat counts honest: drop picks who are no longer running.
+            await Ballot.ReconcileAsync(slug, candidatesTask.Result);
+            selections = await Ballot.GetAsync(slug);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            // Superseded by a newer load or the component was disposed.
+        }
+        catch (Exception ex)
+        {
+            Logger.CandidatesLoadFailed(ex, slug);
+            errorMessage = ex is ApiRequestException
+                ? ex.Message
+                : "We couldn't load the candidates right now. Please try again.";
+        }
+    }
+
+    /// <summary>Applies the current search text and position filter to the loaded data.</summary>
+    private DirectoryView BuildView()
+    {
+        // While the box holds an invalid search, keep showing results for the last valid one.
+        var text = IsSearchValid ? searchForm.Search : Filter.Search;
+        var term = string.IsNullOrWhiteSpace(text) ? null : text.Trim();
+
+        // A position id from the URL that isn't in this municipality is ignored (shows all positions).
+        var selected = sections!.FirstOrDefault(s => s.Position.Id == Filter.PositionId)?.Position;
+
+        var shown = new List<PositionSection>();
+        foreach (var section in sections!)
+        {
+            if (selected is not null && section.Position.Id != selected.Id) continue;
+
+            // Same rule as the API's name search: case-insensitive "contains".
+            var matches = term is null
+                ? section.Candidates
+                : section.Candidates.Where(c => c.Name.Contains(term, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            // Without a search, keep empty positions visible so voters know nobody is running yet.
+            if (term is null || matches.Count > 0)
+                shown.Add(section with { Candidates = matches });
+        }
+
+        return new DirectoryView(shown, shown.Sum(s => s.Candidates.Count), term, selected?.Id, selected?.Name);
+    }
+
+    private bool IsSearchValid => !searchContext.GetValidationMessages(SearchField).Any();
+
+    private string? ValidSearch => string.IsNullOrWhiteSpace(searchForm.Search) ? null : searchForm.Search;
+
+    private Task OnSearchChangedAsync()
+    {
+        searchContext.NotifyFieldChanged(SearchField); // runs the [StringLength] rule
+        return IsSearchValid
+            ? NotifyAsync(new CandidateFilterState(ValidSearch, Filter.PositionId))
+            : Task.CompletedTask; // invalid: don't put it in the URL or apply it
+    }
+
+    private Task OnPositionChangedAsync(int? positionId) =>
+        NotifyAsync(Filter with { Search = IsSearchValid ? ValidSearch : Filter.Search, PositionId = positionId });
+
+    private async Task ClearFiltersAsync()
+    {
+        searchForm.Search = null;
+        searchContext.NotifyFieldChanged(SearchField);
+        await NotifyAsync(CandidateFilterState.Empty);
+        // The button that was clicked disappears once filters are cleared; keep keyboard focus useful.
+        await searchInput.FocusAsync();
+    }
+
+    private Task NotifyAsync(CandidateFilterState state)
+    {
+        lastFilter = state; // our own change: don't copy it back into the text box
+        return FilterChanged.InvokeAsync(state);
+    }
+
+    private static string SeatsText(int seats) => seats == 1 ? "Vote for 1" : $"Vote for up to {seats}";
+
+    private static string CountText(int count) => count == 1 ? "1 candidate" : $"{count} candidates";
+
+    public void Dispose()
+    {
+        Ballot.Changed -= OnBallotChanged;
+        cts?.Cancel();
+        cts?.Dispose();
+    }
+}

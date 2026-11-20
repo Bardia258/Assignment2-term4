@@ -7,10 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A12000013088000000000001 /* MunicipalityLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000013088000000000002 /* MunicipalityLabel.swift */; };
+		9A8A17B530AF672400A9C025 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 9A8A17B430AF672400A9C025 /* GoogleService-Info.plist */; };
+		9A8A17B930AF6F8A00A9C025 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 9A8A17B830AF6F8A00A9C025 /* FirebaseAuth */; };
+		9A8A17BB30AF6F9A00A9C025 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 9A8A17BA30AF6F9A00A9C025 /* FirebaseFirestore */; };
 		9AA24D373086FA7A002131F1 /* CandidateDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AA24D363086FA7A002131F1 /* CandidateDetailView.swift */; };
-		9AA24D393086FF4A002131F1 /* VotingGuideManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AA24D383086FF4A002131F1 /* VotingGuideManager.swift */; };
-		9AA24D3B30870023002131F1 /* VotingGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AA24D3A30870023002131F1 /* VotingGuideView.swift */; };
+		9AA24D393086FF4A002131F1 /* SelectionsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AA24D383086FF4A002131F1 /* SelectionsStore.swift */; };
+		9AA24D3B30870023002131F1 /* SelectionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AA24D3A30870023002131F1 /* SelectionsView.swift */; };
 		9AA24D3D3087078C002131F1 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AA24D3C3087078C002131F1 /* AuthViewModel.swift */; };
 		9AA24D3F308707DB002131F1 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AA24D3E308707DB002131F1 /* LoginView.swift */; };
 		9AA24D4130870810002131F1 /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AA24D4030870810002131F1 /* RegisterView.swift */; };
@@ -26,6 +28,25 @@
 		9AF3756A30848AC200A33A48 /* MunicipalElectionsUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AF3756930848AC200A33A48 /* MunicipalElectionsUITestsLaunchTests.swift */; };
 		9AF3757730848B9300A33A48 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AF3757630848B9300A33A48 /* Models.swift */; };
 		9AF3757930848BB900A33A48 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AF3757830848BB900A33A48 /* APIClient.swift */; };
+		A12000013088000000000001 /* MunicipalityLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000013088000000000002 /* MunicipalityLabel.swift */; };
+		B4A200000000000000000021 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000011 /* AuthService.swift */; };
+		B4A200000000000000000022 /* FirebaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000012 /* FirebaseService.swift */; };
+		B4A200000000000000000023 /* MunicipalityStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000013 /* MunicipalityStore.swift */; };
+		B4A200000000000000000024 /* MunicipalityPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000014 /* MunicipalityPickerView.swift */; };
+		B4A200000000000000000025 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000015 /* HomeView.swift */; };
+		B4A200000000000000000026 /* CandidatePhotoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000016 /* CandidatePhotoView.swift */; };
+		B4A200000000000000000027 /* ErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000017 /* ErrorBanner.swift */; };
+		B4A200000000000000000055 /* AdaptiveLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000054 /* AdaptiveLayout.swift */; };
+		B4A200000000000000000028 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000018 /* KeychainService.swift */; };
+		B4A200000000000000000029 /* JWT.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000019 /* JWT.swift */; };
+		B4A20000000000000000002A /* AuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A20000000000000000001A /* AuthSession.swift */; };
+		B4A20000000000000000002B /* FirebaseAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A20000000000000000001B /* FirebaseAuthService.swift */; };
+		B4A20000000000000000002C /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A20000000000000000001C /* HomeViewModel.swift */; };
+		B4A20000000000000000002D /* UserProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A20000000000000000001D /* UserProfileService.swift */; };
+		B4A20000000000000000002E /* SelectionEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A20000000000000000001E /* SelectionEditorView.swift */; };
+		B4A20000000000000000002F /* CandidateSelectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A20000000000000000001F /* CandidateSelectionService.swift */; };
+		B4A200000000000000000051 /* FirestoreRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000050 /* FirestoreRequest.swift */; };
+		B4A200000000000000000053 /* SyncStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000052 /* SyncStatus.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -46,10 +67,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		A12000013088000000000002 /* MunicipalityLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MunicipalityLabel.swift; sourceTree = "<group>"; };
+		9A8A17B430AF672400A9C025 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		9AA24D363086FA7A002131F1 /* CandidateDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CandidateDetailView.swift; sourceTree = "<group>"; };
-		9AA24D383086FF4A002131F1 /* VotingGuideManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VotingGuideManager.swift; sourceTree = "<group>"; };
-		9AA24D3A30870023002131F1 /* VotingGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VotingGuideView.swift; sourceTree = "<group>"; };
+		9AA24D383086FF4A002131F1 /* SelectionsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionsStore.swift; sourceTree = "<group>"; };
+		9AA24D3A30870023002131F1 /* SelectionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionsView.swift; sourceTree = "<group>"; };
 		9AA24D3C3087078C002131F1 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		9AA24D3E308707DB002131F1 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		9AA24D4030870810002131F1 /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
@@ -68,6 +89,25 @@
 		9AF3756930848AC200A33A48 /* MunicipalElectionsUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MunicipalElectionsUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		9AF3757630848B9300A33A48 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		9AF3757830848BB900A33A48 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		A12000013088000000000002 /* MunicipalityLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MunicipalityLabel.swift; sourceTree = "<group>"; };
+		B4A200000000000000000011 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		B4A200000000000000000012 /* FirebaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseService.swift; sourceTree = "<group>"; };
+		B4A200000000000000000013 /* MunicipalityStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MunicipalityStore.swift; sourceTree = "<group>"; };
+		B4A200000000000000000014 /* MunicipalityPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MunicipalityPickerView.swift; sourceTree = "<group>"; };
+		B4A200000000000000000015 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		B4A200000000000000000016 /* CandidatePhotoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CandidatePhotoView.swift; sourceTree = "<group>"; };
+		B4A200000000000000000017 /* ErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBanner.swift; sourceTree = "<group>"; };
+		B4A200000000000000000054 /* AdaptiveLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveLayout.swift; sourceTree = "<group>"; };
+		B4A200000000000000000018 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		B4A200000000000000000019 /* JWT.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JWT.swift; sourceTree = "<group>"; };
+		B4A20000000000000000001A /* AuthSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSession.swift; sourceTree = "<group>"; };
+		B4A20000000000000000001B /* FirebaseAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAuthService.swift; sourceTree = "<group>"; };
+		B4A20000000000000000001C /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
+		B4A20000000000000000001D /* UserProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileService.swift; sourceTree = "<group>"; };
+		B4A20000000000000000001E /* SelectionEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionEditorView.swift; sourceTree = "<group>"; };
+		B4A20000000000000000001F /* CandidateSelectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CandidateSelectionService.swift; sourceTree = "<group>"; };
+		B4A200000000000000000050 /* FirestoreRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreRequest.swift; sourceTree = "<group>"; };
+		B4A200000000000000000052 /* SyncStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatus.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -75,6 +115,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9A8A17B930AF6F8A00A9C025 /* FirebaseAuth in Frameworks */,
+				9A8A17BB30AF6F9A00A9C025 /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -95,25 +137,22 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		9A8A17B730AF6F8A00A9C025 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		9AF3754030848AC000A33A48 = {
 			isa = PBXGroup;
 			children = (
-				9AA24D44308724BF002131F1 /* CandidateDirectoryViewModel.swift */,
-				9AA24D46308724D8002131F1 /* CandidateDirectoryView.swift */,
-				9AA24D423087083D002131F1 /* ProfileView.swift */,
-				9AA24D4030870810002131F1 /* RegisterView.swift */,
-				9AA24D3E308707DB002131F1 /* LoginView.swift */,
-				9AA24D3C3087078C002131F1 /* AuthViewModel.swift */,
-				9AA24D3A30870023002131F1 /* VotingGuideView.swift */,
-				9AA24D383086FF4A002131F1 /* VotingGuideManager.swift */,
-				9AA24D363086FA7A002131F1 /* CandidateDetailView.swift */,
-				9AF3757830848BB900A33A48 /* APIClient.swift */,
-				A12000013088000000000002 /* MunicipalityLabel.swift */,
-				9AF3757630848B9300A33A48 /* Models.swift */,
+				9A8A17B430AF672400A9C025 /* GoogleService-Info.plist */,
 				9AF3754B30848AC000A33A48 /* MunicipalElections */,
 				9AF3755C30848AC200A33A48 /* MunicipalElectionsTests */,
 				9AF3756630848AC200A33A48 /* MunicipalElectionsUITests */,
 				9AF3754A30848AC000A33A48 /* Products */,
+				9A8A17B730AF6F8A00A9C025 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -131,11 +170,153 @@
 			isa = PBXGroup;
 			children = (
 				9AF3754C30848AC000A33A48 /* MunicipalElectionsApp.swift */,
-				9AF3754E30848AC000A33A48 /* ContentView.swift */,
+				B4A200000000000000000001 /* Models */,
+				B4A200000000000000000002 /* Services */,
+				B4A200000000000000000006 /* ViewModels */,
+				B4A200000000000000000007 /* Views */,
 				9AF3755030848AC200A33A48 /* Assets.xcassets */,
 				9AF3755230848AC200A33A48 /* Preview Content */,
 			);
 			path = MunicipalElections;
+			sourceTree = "<group>";
+		};
+		B4A200000000000000000001 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				9AF3757630848B9300A33A48 /* Models.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		B4A200000000000000000002 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				B4A200000000000000000003 /* API */,
+				B4A200000000000000000004 /* Auth */,
+				B4A200000000000000000005 /* Firebase */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		B4A200000000000000000003 /* API */ = {
+			isa = PBXGroup;
+			children = (
+				9AF3757830848BB900A33A48 /* APIClient.swift */,
+			);
+			path = API;
+			sourceTree = "<group>";
+		};
+		B4A200000000000000000004 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				B4A200000000000000000011 /* AuthService.swift */,
+				B4A200000000000000000018 /* KeychainService.swift */,
+				B4A200000000000000000019 /* JWT.swift */,
+				B4A20000000000000000001A /* AuthSession.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		B4A200000000000000000005 /* Firebase */ = {
+			isa = PBXGroup;
+			children = (
+				B4A200000000000000000012 /* FirebaseService.swift */,
+				B4A20000000000000000001B /* FirebaseAuthService.swift */,
+				B4A20000000000000000001D /* UserProfileService.swift */,
+				B4A20000000000000000001F /* CandidateSelectionService.swift */,
+				B4A200000000000000000050 /* FirestoreRequest.swift */,
+			);
+			path = Firebase;
+			sourceTree = "<group>";
+		};
+		B4A200000000000000000006 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				9AA24D3C3087078C002131F1 /* AuthViewModel.swift */,
+				9AA24D44308724BF002131F1 /* CandidateDirectoryViewModel.swift */,
+				B4A200000000000000000013 /* MunicipalityStore.swift */,
+				B4A20000000000000000001C /* HomeViewModel.swift */,
+				9AA24D383086FF4A002131F1 /* SelectionsStore.swift */,
+				B4A200000000000000000052 /* SyncStatus.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		B4A200000000000000000007 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				9AF3754E30848AC000A33A48 /* ContentView.swift */,
+				B4A200000000000000000008 /* Auth */,
+				B4A200000000000000000009 /* Profile */,
+				B4A20000000000000000000A /* Directory */,
+				B4A20000000000000000000E /* Home */,
+				B4A20000000000000000000B /* Municipalities */,
+				B4A20000000000000000000C /* Selections */,
+				B4A20000000000000000000D /* Components */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		B4A200000000000000000008 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				9AA24D3E308707DB002131F1 /* LoginView.swift */,
+				9AA24D4030870810002131F1 /* RegisterView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		B4A200000000000000000009 /* Profile */ = {
+			isa = PBXGroup;
+			children = (
+				9AA24D423087083D002131F1 /* ProfileView.swift */,
+			);
+			path = Profile;
+			sourceTree = "<group>";
+		};
+		B4A20000000000000000000A /* Directory */ = {
+			isa = PBXGroup;
+			children = (
+				9AA24D46308724D8002131F1 /* CandidateDirectoryView.swift */,
+				9AA24D363086FA7A002131F1 /* CandidateDetailView.swift */,
+			);
+			path = Directory;
+			sourceTree = "<group>";
+		};
+		B4A20000000000000000000E /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				B4A200000000000000000015 /* HomeView.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		B4A20000000000000000000B /* Municipalities */ = {
+			isa = PBXGroup;
+			children = (
+				B4A200000000000000000014 /* MunicipalityPickerView.swift */,
+			);
+			path = Municipalities;
+			sourceTree = "<group>";
+		};
+		B4A20000000000000000000C /* Selections */ = {
+			isa = PBXGroup;
+			children = (
+				9AA24D3A30870023002131F1 /* SelectionsView.swift */,
+				B4A20000000000000000001E /* SelectionEditorView.swift */,
+			);
+			path = Selections;
+			sourceTree = "<group>";
+		};
+		B4A20000000000000000000D /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A12000013088000000000002 /* MunicipalityLabel.swift */,
+				B4A200000000000000000016 /* CandidatePhotoView.swift */,
+				B4A200000000000000000017 /* ErrorBanner.swift */,
+				B4A200000000000000000054 /* AdaptiveLayout.swift */,
+			);
+			path = Components;
 			sourceTree = "<group>";
 		};
 		9AF3755230848AC200A33A48 /* Preview Content */ = {
@@ -179,6 +360,10 @@
 			dependencies = (
 			);
 			name = MunicipalElections;
+			packageProductDependencies = (
+				9A8A17B830AF6F8A00A9C025 /* FirebaseAuth */,
+				9A8A17BA30AF6F9A00A9C025 /* FirebaseFirestore */,
+			);
 			productName = MunicipalElections;
 			productReference = 9AF3754930848AC000A33A48 /* MunicipalElections.app */;
 			productType = "com.apple.product-type.application";
@@ -251,6 +436,9 @@
 				Base,
 			);
 			mainGroup = 9AF3754030848AC000A33A48;
+			packageReferences = (
+				9A8A17B630AF6C1000A9C025 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			productRefGroup = 9AF3754A30848AC000A33A48 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -269,6 +457,7 @@
 			files = (
 				9AF3755430848AC200A33A48 /* Preview Assets.xcassets in Resources */,
 				9AF3755130848AC200A33A48 /* Assets.xcassets in Resources */,
+				9A8A17B530AF672400A9C025 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -299,14 +488,32 @@
 				A12000013088000000000001 /* MunicipalityLabel.swift in Sources */,
 				9AF3754F30848AC000A33A48 /* ContentView.swift in Sources */,
 				9AA24D3F308707DB002131F1 /* LoginView.swift in Sources */,
-				9AA24D3B30870023002131F1 /* VotingGuideView.swift in Sources */,
+				9AA24D3B30870023002131F1 /* SelectionsView.swift in Sources */,
 				9AA24D47308724D8002131F1 /* CandidateDirectoryView.swift in Sources */,
 				9AA24D3D3087078C002131F1 /* AuthViewModel.swift in Sources */,
 				9AA24D373086FA7A002131F1 /* CandidateDetailView.swift in Sources */,
 				9AF3754D30848AC000A33A48 /* MunicipalElectionsApp.swift in Sources */,
 				9AA24D433087083D002131F1 /* ProfileView.swift in Sources */,
 				9AA24D45308724BF002131F1 /* CandidateDirectoryViewModel.swift in Sources */,
-				9AA24D393086FF4A002131F1 /* VotingGuideManager.swift in Sources */,
+				9AA24D393086FF4A002131F1 /* SelectionsStore.swift in Sources */,
+				B4A200000000000000000021 /* AuthService.swift in Sources */,
+				B4A200000000000000000022 /* FirebaseService.swift in Sources */,
+				B4A200000000000000000023 /* MunicipalityStore.swift in Sources */,
+				B4A200000000000000000024 /* MunicipalityPickerView.swift in Sources */,
+				B4A200000000000000000025 /* HomeView.swift in Sources */,
+				B4A200000000000000000026 /* CandidatePhotoView.swift in Sources */,
+				B4A200000000000000000027 /* ErrorBanner.swift in Sources */,
+				B4A200000000000000000055 /* AdaptiveLayout.swift in Sources */,
+				B4A200000000000000000028 /* KeychainService.swift in Sources */,
+				B4A200000000000000000029 /* JWT.swift in Sources */,
+				B4A20000000000000000002A /* AuthSession.swift in Sources */,
+				B4A20000000000000000002B /* FirebaseAuthService.swift in Sources */,
+				B4A20000000000000000002D /* UserProfileService.swift in Sources */,
+				B4A20000000000000000002F /* CandidateSelectionService.swift in Sources */,
+				B4A200000000000000000051 /* FirestoreRequest.swift in Sources */,
+				B4A200000000000000000053 /* SyncStatus.swift in Sources */,
+				B4A20000000000000000002E /* SelectionEditorView.swift in Sources */,
+				B4A20000000000000000002C /* HomeViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -636,6 +843,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		9A8A17B630AF6C1000A9C025 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = exactVersion;
+				version = 10.29.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		9A8A17B830AF6F8A00A9C025 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9A8A17B630AF6C1000A9C025 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		9A8A17BA30AF6F9A00A9C025 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9A8A17B630AF6C1000A9C025 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 9AF3754130848AC000A33A48 /* Project object */;
 }

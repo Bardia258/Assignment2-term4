@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace MEMS.Data.Services;
 
 /// <summary>All reads and mutations require an explicit trusted scope; raw DbContext access is privileged.</summary>
-public sealed class ElectionRepository(ApplicationDbContext db)
+public sealed class ElectionRepository(ApplicationDbContext db, MunicipalityAdministratorProvisioner administrators)
 {
     private IQueryable<Municipality> Municipalities(MunicipalityScope scope) => db.Municipalities
         .Where(m => scope.IsSuperAdmin || m.MunicipalityId == scope.MunicipalityId);
@@ -56,12 +56,16 @@ public sealed class ElectionRepository(ApplicationDbContext db)
     public async Task<Municipality> AddMunicipalityAsync(MunicipalityScope scope, Municipality input, CancellationToken ct = default)
     {
         DemandSuperAdmin(scope);
-        var entity = new Municipality();
-        await CheckMunicipalityDuplicateAsync(input, 0, ct);
-        CopyMunicipality(input, entity);
-        db.Municipalities.Add(entity);
-        await db.SaveChangesAsync(ct);
-        return entity;
+        return await InTransactionAsync(async () =>
+        {
+            var entity = new Municipality();
+            await CheckMunicipalityDuplicateAsync(input, 0, ct);
+            CopyMunicipality(input, entity);
+            db.Municipalities.Add(entity);
+            await db.SaveChangesAsync(ct);
+            await administrators.CreateAsync(scope, entity, ct);
+            return entity;
+        }, ct);
     }
 
     public async Task<bool> UpdateMunicipalityAsync(MunicipalityScope scope, Municipality input, CancellationToken ct = default)
@@ -79,16 +83,19 @@ public sealed class ElectionRepository(ApplicationDbContext db)
     public async Task<bool> DeleteMunicipalityAsync(MunicipalityScope scope, int id, string revision, CancellationToken ct = default)
     {
         DemandSuperAdmin(scope);
-        var stored = await Municipalities(scope).SingleOrDefaultAsync(m => m.MunicipalityId == id, ct);
-        if (stored is null) return false;
-        if (await db.Positions.AnyAsync(p => p.MunicipalityId == id, ct)
-            || await db.Candidates.AnyAsync(c => c.MunicipalityId == id, ct)
-            || await db.Users.AnyAsync(u => u.MunicipalityId == id, ct))
-            throw new RecordConflictException("Remove dependent election records and reassign administrators before deleting a municipality.");
-        db.Entry(stored).Property(m => m.Revision).OriginalValue = revision;
-        db.Municipalities.Remove(stored);
-        await db.SaveChangesAsync(ct);
-        return true;
+        return await InTransactionAsync(async () =>
+        {
+            var stored = await Municipalities(scope).SingleOrDefaultAsync(m => m.MunicipalityId == id, ct);
+            if (stored is null) return false;
+            if (await db.Positions.AnyAsync(p => p.MunicipalityId == id, ct)
+                || await db.Candidates.AnyAsync(c => c.MunicipalityId == id, ct))
+                throw new RecordConflictException("Remove dependent election records before deleting a municipality.");
+            await administrators.RemoveGeneratedAccountsAsync(scope, id, ct);
+            db.Entry(stored).Property(m => m.Revision).OriginalValue = revision;
+            db.Municipalities.Remove(stored);
+            await db.SaveChangesAsync(ct);
+            return true;
+        }, ct);
     }
 
     public async Task<Position> AddPositionAsync(MunicipalityScope scope, Position input, CancellationToken ct = default)
@@ -165,6 +172,24 @@ public sealed class ElectionRepository(ApplicationDbContext db)
         await db.SaveChangesAsync(ct);
         return true;
     }
+
+    private Task<T> InTransactionAsync<T>(Func<Task<T>> operation, CancellationToken ct) =>
+        db.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
+        {
+            await using var transaction = db.Database.IsRelational() && db.Database.CurrentTransaction is null
+                ? await db.Database.BeginTransactionAsync(ct) : null;
+            try
+            {
+                var result = await operation();
+                if (transaction is not null) await transaction.CommitAsync(ct);
+                return result;
+            }
+            catch
+            {
+                db.ChangeTracker.Clear();
+                throw;
+            }
+        });
 
     private async Task DemandPositionAsync(int positionId, int municipalityId, CancellationToken ct)
     {

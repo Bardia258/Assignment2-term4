@@ -1,0 +1,10 @@
+@page "/{Tenant}"
+
+<TenantGuard Tenant="@Tenant" Context="municipality">
+    <PageTitle>@municipality.Name elections</PageTitle>
+    <MunicipalityOverview Municipality="municipality" />
+</TenantGuard>
+
+@code {
+    [Parameter] public string Tenant { get; set; } = "";
+}

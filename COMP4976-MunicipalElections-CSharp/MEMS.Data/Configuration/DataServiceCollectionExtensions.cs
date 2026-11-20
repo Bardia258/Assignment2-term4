@@ -18,6 +18,18 @@ public static class DataServiceCollectionExtensions
             ConfigureSqlServer(options, configuration,
                 provider.GetRequiredService<IHostEnvironment>().EnvironmentName));
         services.AddMemsIdentity();
+        services.AddOptions<IdentityOptions>().Configure<IHostEnvironment>((options, environment) =>
+        {
+            if (environment.IsDevelopment())
+                options.Password.RequiredLength = DevelopmentSeedOptions.DefaultPassword.Length;
+        });
+        services.AddScoped(provider => new MunicipalityAdministratorProvisioner(
+            provider.GetRequiredService<ApplicationDbContext>(),
+            provider.GetRequiredService<UserManager<ApplicationUser>>(),
+            provider.GetRequiredService<RoleManager<IdentityRole>>(),
+            configuration["Mems:MunicipalityAdministrator:InitialPassword"]
+                ?? (provider.GetRequiredService<IHostEnvironment>().IsDevelopment()
+                    ? DevelopmentSeedOptions.DefaultPassword : null)));
         services.AddScoped<ElectionRepository>();
         services.AddScoped<AdministratorScopeResolver>();
         return services;
@@ -39,11 +51,13 @@ public static class DataServiceCollectionExtensions
                 DevelopmentSeeder.RunAsync((ApplicationDbContext)context, seedOptions, cancellationToken));
     }
 
-    internal static IdentityBuilder AddMemsIdentity(this IServiceCollection services) =>
+    internal static IdentityBuilder AddMemsIdentity(this IServiceCollection services,
+        bool useDefaultDevelopmentPassword = false) =>
         services.AddIdentityCore<ApplicationUser>(options =>
         {
             options.User.RequireUniqueEmail = true;
-            options.Password.RequiredLength = 12;
+            options.Password.RequiredLength = useDefaultDevelopmentPassword
+                ? DevelopmentSeedOptions.DefaultPassword.Length : 12;
             options.Password.RequireDigit = true;
             options.Password.RequireLowercase = true;
             options.Password.RequireUppercase = true;

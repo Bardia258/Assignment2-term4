@@ -1,16 +1,27 @@
 ﻿@inherits LayoutComponentBase
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+<div class="d-flex flex-column min-vh-100">
+    <NavMenu />
 
-        <article class="content px-4">
-            @Body
-        </article>
+    <main class="container flex-grow-1 py-3">
+        <ErrorBoundary @ref="errorBoundary">
+            <ChildContent>@Body</ChildContent>
+            <ErrorContent>
+                <ErrorAlert Message="Something went wrong while showing this page. Please try again."
+                            OnRetry="Recover" />
+            </ErrorContent>
+        </ErrorBoundary>
     </main>
+
+    <footer class="border-top py-3 text-secondary small d-print-none">
+        <div class="container">
+            Your voting guide stays in this browser tab only and is never sent to our servers.
+        </div>
+    </footer>
 </div>
+
+@code {
+    private ErrorBoundary? errorBoundary;
+
+    private void Recover() => errorBoundary?.Recover();
+}

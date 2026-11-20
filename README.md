@@ -2,10 +2,15 @@
 
 This repository contains both the COMP4976 C# project and the COMP4977 iOS project.
 
-- **COMP4976:** Visit the [C# project](COMP4976-MunicipalElections-CSharp/) for the website frontend and backend. [C# README](COMP4976-MunicipalElections-CSharp/docs/README.md) · [C# ERD](COMP4976-MunicipalElections-CSharp/docs/erd/ERD.md).
-- **COMP4977:** Visit both the [iOS project](COMP4977-MunicipalElections-iOS/) for the SwiftUI app and the [C# API folder](COMP4976-MunicipalElections-CSharp/MunicipalElections.Web/Controllers/Api/) for its shared backend. [iOS ERD](COMP4977-MunicipalElections-iOS/docs/erd/ERD.md) · [Architecture](COMP4977-MunicipalElections-iOS/docs/architecture/ARCHITECTURE.md) · [API endpoints](COMP4977-MunicipalElections-iOS/docs/api/API-ENDPOINTS.md).
+- **COMP4976:** [C# setup](COMP4976-MunicipalElections-CSharp/docs/README.md) · [Architecture](COMP4976-MunicipalElections-CSharp/docs/architecture/ARCHITECTURE.md) · [ERD](COMP4976-MunicipalElections-CSharp/docs/erd/ERD.md) · [API reference](COMP4976-MunicipalElections-CSharp/docs/api/API-ENDPOINTS.md).
+- **COMP4977:** [iOS setup](COMP4977-MunicipalElections-iOS/docs/README.md) · [Architecture](COMP4977-MunicipalElections-iOS/docs/architecture/ARCHITECTURE.md) · [SQLite/Firestore model](COMP4977-MunicipalElections-iOS/docs/erd/ERD.md) · [API reference](COMP4977-MunicipalElections-iOS/docs/api/API-ENDPOINTS.md).
 
-Website: [Open the Azure website](https://municipal-elections-d8ffazd0dfevdpc6.westus3-01.azurewebsites.net/).
+Assignment 2 running and hosting:
+
+- **COMP4976 runs locally.** Install the .NET 10 SDK and start Docker Desktop with Linux containers. Open `COMP4976-MunicipalElections-CSharp/MEMS.sln`, choose `MEMS.AppHost` as the startup project, and run its `https` profile. Aspire starts SQL Server, the API, Admin, and Public sites; migrations and development accounts are prepared automatically. The five local Admin accounts use `P@$$w0rd`. Accept the development HTTPS certificate prompt if shown. This solution does not need Azure deployment.
+- **COMP4977 uses a hosted backend.** Open `COMP4977-MunicipalElections-iOS/MunicipalElections.slnx` for the existing SQLite/JWT backend. Deploy only its `MunicipalElections.Web` project to the existing Azure App Service; the GitHub workflow targets that project. This deployment does not need the MEMS SQL Server container or Docker. The SwiftUI app also uses Firebase Authentication and Firestore for its profile and saved selections.
+
+Existing iOS backend address: [Azure service](https://municipal-elections-d8ffazd0dfevdpc6.westus3-01.azurewebsites.net/). The latest local changes have not been deployed or verified there.
 
 API: [View municipalities](https://municipal-elections-d8ffazd0dfevdpc6.westus3-01.azurewebsites.net/api/municipalities). The iOS app uses the same Azure address with `/api/...` routes.
 
@@ -18,12 +23,15 @@ Developed by **Bardia Bashiri** and **Omar Mohamad**.
 
 ## Project status
 
-We completed all project requirements. There are no incomplete features.
+The two course folders contain separate backends: C# uses SQL Server and
+Identity cookies; iOS uses SQLite/JWT plus Firebase. Their databases and login
+sessions are independent. See each setup guide for current functionality and
+known limitations. Native iOS/Firebase runtime checks and the latest Azure
+deployment remain unverified.
 
-## Main challenge
+## Assignment 1 history
 
-Azure deployment was the main challenge. Bardia encountered some deployment issues and resolved them.
-
-## Application URL
-
-[Open Municipal Elections](https://municipal-elections-d8ffazd0dfevdpc6.westus3-01.azurewebsites.net/)
+The original project used an MVC/SQLite application with a shared iOS API.
+Azure deployment was a main challenge and deployment issues were resolved
+during that work. For Assignment 2, the moved `MunicipalElections.Web` project
+is API-only; the C# administrative/public websites are the separate MEMS solution.

@@ -1,39 +1,10 @@
+/* Bootstrap 5.3 defaults are used for colours, buttons, links and form validation (.is-invalid). */
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 h1:focus {
     outline: none;
-}
-
-a, .btn-link {
-    color: #0071c1;
-}
-
-.btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-.content {
-    padding-top: 1.1rem;
-}
-
-.valid.modified:not([type=checkbox]) {
-    outline: 1px solid #26b050;
-}
-
-.invalid {
-    outline: 1px solid red;
-}
-
-.validation-message {
-    color: red;
 }
 
 #blazor-error-ui {
@@ -85,7 +56,7 @@ a, .btn-link {
     }
 
         .loading-progress circle:last-child {
-            stroke: #1b6ec2;
+            stroke: var(--bs-primary);
             stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
             transition: stroke-dasharray 0.05s ease-in-out;
         }
@@ -101,15 +72,313 @@ a, .btn-link {
         content: var(--blazor-load-percentage-text, "Loading");
     }
 
-code {
-    color: #c02d76;
+/* ---- Public site ---- */
+.mw-prose {
+    max-width: 70ch;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-    color: var(--bs-secondary-color);
-    text-align: end;
+.municipality-card {
+    transition: box-shadow .15s ease-in-out, transform .15s ease-in-out;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-    text-align: start;
+    .municipality-card:hover,
+    .municipality-card:focus-visible {
+        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .12);
+        transform: translateY(-2px);
+    }
+
+.min-w-0 {
+    min-width: 0;
+}
+
+.text-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Municipality badge and seats table (ported from A1 site.css) */
+.municipality-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    vertical-align: middle;
+}
+
+.municipality-logo-container {
+    display: inline-flex;
+    flex-shrink: 0;
+}
+
+.municipality-logo {
+    width: 2rem;
+    height: 2rem;
+    object-fit: contain;
+    border-radius: 0.4rem;
+    background-color: #fff;
+}
+
+.municipality-logo-placeholder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bs-primary-bg-subtle);
+    color: var(--bs-primary-text-emphasis);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.municipality-badge-md .municipality-logo {
+    width: 3.5rem;
+    height: 3.5rem;
+    font-size: 1.1rem;
+}
+
+.municipality-badge-lg .municipality-logo {
+    width: 4.5rem;
+    height: 4.5rem;
+    font-size: 1.5rem;
+}
+
+.municipality-position-summary {
+    max-width: 34rem;
+}
+
+.municipality-seats td {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Candidates */
+.candidate-card {
+    transition: box-shadow .15s ease-in-out;
+}
+
+    .candidate-card:hover,
+    .candidate-card:focus-within {
+        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .12);
+    }
+
+.candidate-avatar {
+    object-fit: cover;
+}
+
+.candidate-avatar-initials {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: var(--bs-primary-text-emphasis);
+    background-color: var(--bs-primary-bg-subtle);
+}
+
+/* Keep the paragraph breaks candidates type into their profile. */
+.candidate-profile {
+    white-space: pre-line;
+}
+
+/* Voting guide */
+.guide-open-seat {
+    border-style: dashed;
+    background-color: transparent;
+}
+
+.guide-status:focus {
+    outline: none;
+}
+
+/* Printable voting guide (screen preview looks like a Letter sheet) */
+.print-sheet {
+    max-width: 8.5in;
+    margin: 0 auto 2rem;
+    padding: 0.6in;
+    background-color: #fff;
+    color: #000;
+    border: 1px solid var(--bs-border-color);
+    box-shadow: 0 .5rem 1.5rem rgba(0, 0, 0, .08);
+}
+
+.print-header {
+    border-bottom: 2px solid #000;
+    padding-bottom: .75rem;
+    margin-bottom: 1rem;
+}
+
+.print-eyebrow,
+.print-meta {
+    font-size: .85rem;
+    color: #444;
+}
+
+.print-eyebrow {
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+.print-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+.print-position {
+    padding: .5rem 0 .75rem;
+    border-bottom: 1px solid #bbb;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.print-position-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .25rem 1rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: .35rem;
+    break-after: avoid;
+    page-break-after: avoid;
+}
+
+.print-seats {
+    font-size: .85rem;
+    font-weight: 400;
+    color: #444;
+}
+
+.print-picks {
+    columns: 2;
+    column-gap: 2rem;
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+    .print-picks li {
+        break-inside: avoid;
+        padding: .1rem 0;
+        font-size: 1.05rem;
+    }
+
+.print-empty {
+    font-style: italic;
+    color: #444;
+}
+
+.print-footer {
+    margin-top: 1rem;
+    font-size: .8rem;
+    color: #444;
+}
+
+@media (max-width: 575.98px) {
+    .print-sheet {
+        padding: 1.25rem;
+    }
+
+    .print-picks {
+        columns: 1;
+    }
+}
+
+/* Dark mode contrast fixes (ported from A1 theme.css) */
+.theme-toggle {
+    white-space: nowrap;
+}
+
+[data-bs-theme="dark"] .text-primary {
+    color: var(--bs-primary-text-emphasis) !important;
+}
+
+[data-bs-theme="dark"] .text-success {
+    color: var(--bs-success-text-emphasis) !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-secondary {
+    --bs-btn-color: var(--bs-secondary-color);
+    --bs-btn-border-color: var(--bs-secondary-color);
+}
+
+/* Printing any page: paper-friendly colours, no site chrome or controls. */
+@media print {
+    @page {
+        size: letter portrait;
+        margin: 0.5in;
+    }
+
+    /* Always print in light colours, even when the site is in dark mode (ported from A1 theme.css). */
+    :root,
+    [data-bs-theme="dark"] {
+        color-scheme: light !important;
+        --bs-body-bg: #fff;
+        --bs-body-bg-rgb: 255, 255, 255;
+        --bs-body-color: #000;
+        --bs-body-color-rgb: 0, 0, 0;
+        --bs-emphasis-color: #000;
+        --bs-secondary-color: #444;
+        --bs-tertiary-bg: #fff;
+        --bs-border-color: #bbb;
+        --bs-primary-text-emphasis: #052c65;
+        --bs-success-text-emphasis: #0a3622;
+        --bs-primary-bg-subtle: #cfe2ff;
+    }
+
+    body {
+        background: #fff !important;
+        color: #000 !important;
+        font-size: 11pt;
+    }
+
+    main.container,
+    main {
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .navbar,
+    .btn,
+    .breadcrumb,
+    [role="search"],
+    .guide-status,
+    .form-text {
+        display: none !important;
+    }
+
+    a {
+        color: inherit !important;
+        text-decoration: none !important;
+    }
+
+    .card {
+        box-shadow: none !important;
+    }
+
+    section {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    h1, h2, h3 {
+        break-after: avoid;
+        page-break-after: avoid;
+    }
+
+    .print-sheet {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        box-shadow: none;
+    }
+
+    .print-picks {
+        columns: 2;
+    }
+
+    /* Letter's printable width is below Bootstrap's md breakpoint; keep guide cards two-up. */
+    .guide-pick {
+        flex: 0 0 auto;
+        width: 50%;
+    }
 }

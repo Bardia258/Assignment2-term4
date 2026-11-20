@@ -1,6 +1,10 @@
 # COMP4977 - SwiftUI / Xcode
 
 # Build output and archives
+bin/
+obj/
+.vs/
+TestResults/
 DerivedData/
 build/
 .build/
@@ -17,6 +21,14 @@ xcuserdata/
 *.xccheckout
 
 # Local configuration, credentials, and signing material
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.local.json
+*.user
+*.suo
+*.pubxml.user
+*.PublishSettings
+*.publishsettings
 .env
 .env.*
 !.env.example
@@ -28,7 +40,15 @@ xcuserdata/
 *.p8
 *.mobileprovision
 
+# Firebase service-account credentials and local CLI cache.
+# GoogleService-Info.plist is mobile client configuration, not an Admin SDK key.
+*firebase-adminsdk*.json
+service-account*.json
+firebase-service-account*.json
+.firebase/
+
 # Local SQLite databases and their sidecar files
+**/App_Data/uploads/
 *.db
 *.db-shm
 *.db-wal

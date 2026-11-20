@@ -1,0 +1,10 @@
+@page "/{Tenant}/guide/print"
+
+<TenantGuard Tenant="@Tenant" Context="municipality">
+    <PageTitle>@municipality.Name voting guide</PageTitle>
+    <PrintableGuide Municipality="municipality" />
+</TenantGuard>
+
+@code {
+    [Parameter] public string Tenant { get; set; } = "";
+}

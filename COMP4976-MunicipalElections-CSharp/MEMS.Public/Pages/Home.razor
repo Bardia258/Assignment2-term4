@@ -1,7 +1,141 @@
 ﻿@page "/"
+@*
+    Landing page. Ported from A1's Views/Home/Index.cshtml (hero + "Participating municipalities" cards
+    built from _MunicipalityCard, _MunicipalityBadge and _PositionSeats). Changes from A1: the hero's
+    election date comes from the data instead of being hard-coded, the date isn't shown in alarm red,
+    and if one municipality's positions fail to load only that card's table is affected.
+*@
+@using MEMS.Public.Services.Api
+@using MEMS.Public.Services.Tenancy
+@inject IMunicipalityApiClient MunicipalityApi
+@inject IPositionApiClient PositionApi
+@inject TenantState TenantState
+@inject ILogger<Home> Logger
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Municipal Elections</PageTitle>
 
-<h1>Hello, world!</h1>
+<section class="text-center mb-5 bg-body-tertiary p-4 p-md-5 rounded shadow-sm">
+    <h1 class="display-5 fw-bold text-primary">Your municipal election guide</h1>
+    <p class="lead mb-4">
+        @if (SharedElectionDate is { } date)
+        {
+            @($"Prepare for the {date:MMMM d, yyyy} election. ")
+        }
+        Review the candidates in your municipality and build your personal voting guide.
+    </p>
+    <a class="btn btn-primary btn-lg" href="#municipalities" @onclick:preventDefault @onclick="ScrollToListAsync">
+        Choose your municipality
+    </a>
+</section>
 
-Welcome to your new app.
+<h2 class="h3 mb-4" id="municipalities" tabindex="-1" @ref="listHeading">Participating municipalities</h2>
+
+@if (municipalities is null && errorMessage is null)
+{
+    <LoadingSpinner Message="Loading municipalities…" />
+}
+else if (errorMessage is not null)
+{
+    <ErrorAlert Message="@errorMessage" OnRetry="LoadAsync" />
+}
+else if (municipalities!.Count == 0)
+{
+    <div class="alert alert-info">No municipalities are available yet. Please check back later.</div>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        @foreach (var m in municipalities)
+        {
+            <div class="col" @key="m.Id">
+                <article class="card h-100 shadow-sm municipality-card">
+                    <div class="card-body d-flex flex-column">
+                        <h3 class="h5 card-title fw-bold">
+                            <a class="text-body text-decoration-none" href="@m.Slug"><MunicipalityBadge Municipality="m" Size="md" /></a>
+                        </h3>
+                        <p class="card-subtitle mb-2 text-secondary">@m.Province</p>
+                        <p class="card-text">@m.Description</p>
+                        <p class="fw-semibold">Election day: @m.ElectionDate.ToString("MMMM d, yyyy")</p>
+                        <div class="mb-3">
+                            @if (positionsByMunicipality.TryGetValue(m.Id, out var positions))
+                            {
+                                <PositionSeats Positions="positions" />
+                            }
+                            else
+                            {
+                                <LoadingSpinner Message="Loading positions…" />
+                            }
+                        </div>
+                        <div class="mt-auto d-flex flex-wrap gap-2">
+                            <a class="btn btn-primary" href="@($"{m.Slug}/candidates")">View candidates</a>
+                            <a class="btn btn-outline-primary" href="@m.Slug"
+                               aria-label="@($"{m.Name} election overview")">Overview</a>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private IReadOnlyList<MunicipalityResponse>? municipalities;
+
+    // A null value means that municipality's positions failed to load.
+    private readonly Dictionary<int, IReadOnlyList<PositionResponse>?> positionsByMunicipality = [];
+    private string? errorMessage;
+    private ElementReference listHeading;
+
+    /// <summary>The election date if every municipality votes on the same day (A1 hard-coded it).</summary>
+    private DateTime? SharedElectionDate =>
+        municipalities is { Count: > 0 } list && list.All(m => m.ElectionDate.Date == list[0].ElectionDate.Date)
+            ? list[0].ElectionDate
+            : null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // The landing page is tenant-neutral.
+        TenantState.Clear();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        errorMessage = null;
+        municipalities = null;
+        positionsByMunicipality.Clear();
+        try
+        {
+            municipalities = await MunicipalityApi.GetMunicipalitiesAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.MunicipalityListLoadFailed(ex);
+            errorMessage = ex is ApiRequestException
+                ? ex.Message
+                : "We couldn't load the list of municipalities right now. Please try again.";
+            return;
+        }
+
+        // Seats tables load in parallel after the cards are shown; one failure doesn't affect the others.
+        StateHasChanged();
+        await Task.WhenAll(municipalities.Select(LoadPositionsAsync));
+    }
+
+    private async Task LoadPositionsAsync(MunicipalityResponse municipality)
+    {
+        try
+        {
+            positionsByMunicipality[municipality.Id] = await PositionApi.GetPositionsAsync(municipality.Slug);
+        }
+        catch (Exception ex)
+        {
+            Logger.PositionsLoadFailed(ex, municipality.Slug);
+            positionsByMunicipality[municipality.Id] = null;
+        }
+        StateHasChanged();
+    }
+
+    // A plain "#municipalities" link would resolve against <base href="/"> and navigate away in Blazor.
+    private async Task ScrollToListAsync() => await listHeading.FocusAsync();
+}

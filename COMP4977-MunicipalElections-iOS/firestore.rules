@@ -1,0 +1,110 @@
+rules_version = '2';
+
+// Firestore security rules for the MunicipalElections iOS app (COMP4977 A2).
+// Publish in Firebase console > Firestore Database > Rules.
+// Anything not matched below is denied (production-mode default).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null && request.auth.token.email != null;
+    }
+
+    // The app signs in to Firebase with the same email as the API account and
+    // always writes emails in lower case.
+    function myEmail() {
+      return request.auth.token.email.lower();
+    }
+
+    function isNonEmptyString(value, maxLength) {
+      return value is string && value.size() > 0 && value.size() <= maxLength;
+    }
+
+    // Every selection mutation must also advance the owner's profile revision.
+    // App seat checks read this before querying the server and compare it in a
+    // transaction, so concurrent app saves cannot both use an old count.
+    // Seat capacity comes from the Azure API; these rules do not independently
+    // verify that external election metadata against a modified client.
+    function advancesSelections(municipalityId) {
+      let path = /databases/$(database)/documents/users/$(myEmail());
+      let before = get(path).data;
+      let after = getAfter(path).data;
+      return after.selectionsRevision == before.get('selectionsRevision', 0) + 1
+        && after.municipalityId == municipalityId;
+    }
+
+    // users/{email}: the user's profile and home municipality.
+    // Document ID = lowercased email; only the owner can read or write it.
+    match /users/{email} {
+      // Profile deletion would reset the revision used by concurrent saves.
+      allow read: if signedIn() && email == myEmail();
+
+      allow create, update: if signedIn()
+        && email == myEmail()
+        && request.resource.data.keys().hasOnly(['email', 'municipalityId', 'municipalityName', 'updatedAt', 'selectionsRevision'])
+        && request.resource.data.email == myEmail()
+        && request.resource.data.municipalityId is int
+        && request.resource.data.municipalityId > 0
+        && isNonEmptyString(request.resource.data.municipalityName, 100)
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.get('selectionsRevision', 0) is int
+        && request.resource.data.get('selectionsRevision', 0) >= 0
+        && request.resource.data.get('selectionsRevision', 0) < 9007199254740991
+        && ((!exists(/databases/$(database)/documents/users/$(email))
+              && request.resource.data.get('selectionsRevision', 0) == 0)
+            || (exists(/databases/$(database)/documents/users/$(email))
+              && (request.resource.data.get('selectionsRevision', 0) == resource.data.get('selectionsRevision', 0)
+                || request.resource.data.get('selectionsRevision', 0) == resource.data.get('selectionsRevision', 0) + 1)));
+    }
+
+    // CandidateSelections/{selectionId}: a user's saved candidates.
+    // Document ID = "{userEmail}_{candidateId}", so each user can save a
+    // candidate at most once (a second create hits an existing doc and is denied).
+    match /CandidateSelections/{selectionId} {
+
+      function validSelection(data) {
+        return data.keys().hasAll(['id', 'userEmail', 'candidateId', 'candidateName', 'positionName',
+                                   'municipalityName', 'municipalityId', 'notes', 'dateCreated', 'dateModified'])
+          && data.keys().hasOnly(['id', 'userEmail', 'candidateId', 'candidateName', 'positionName',
+                                  'municipalityName', 'municipalityId', 'notes', 'dateCreated', 'dateModified',
+                                  'photoUrl', 'positionId'])
+          && data.id == selectionId
+          && data.userEmail == myEmail()
+          && data.candidateId is int && data.candidateId > 0
+          && isNonEmptyString(data.candidateName, 200)
+          && isNonEmptyString(data.positionName, 100)
+          && isNonEmptyString(data.municipalityName, 100)
+          && data.municipalityId is int && data.municipalityId > 0
+          && data.notes is string && data.notes.size() <= 500
+          && (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 500))
+          // positionId (Phase 5, used for seat limits) is optional so older records stay valid.
+          && (!('positionId' in data) || (data.positionId is int && data.positionId > 0))
+          && data.dateCreated is timestamp
+          && data.dateModified == request.time;
+      }
+
+      // No document data is exposed for another user. Missing documents may be
+      // read by authenticated clients so transactions can handle repeated deletes.
+      allow get: if signedIn() && (!exists(/databases/$(database)/documents/CandidateSelections/$(selectionId))
+        || resource.data.userEmail == myEmail());
+      allow list: if signedIn() && resource.data.userEmail == myEmail();
+      allow delete: if signedIn() && resource.data.userEmail == myEmail()
+        && advancesSelections(resource.data.municipalityId);
+
+      // Create: must be yours, valid, use the deterministic ID, and stamp dateCreated now.
+      allow create: if signedIn()
+        && request.resource.data.userEmail == myEmail()
+        && validSelection(request.resource.data)
+        && selectionId == myEmail() + '_' + string(request.resource.data.candidateId)
+        && request.resource.data.dateCreated == request.time
+        && advancesSelections(request.resource.data.municipalityId);
+
+      // Update: only your own records, and only notes + dateModified may change.
+      allow update: if signedIn()
+        && resource.data.userEmail == myEmail()
+        && validSelection(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['notes', 'dateModified'])
+        && advancesSelections(resource.data.municipalityId);
+    }
+  }
+}

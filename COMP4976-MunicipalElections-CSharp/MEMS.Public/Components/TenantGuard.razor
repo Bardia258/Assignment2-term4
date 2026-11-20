@@ -1,0 +1,147 @@
+@*
+    Resolves the {Tenant} route segment to a municipality before rendering a tenant page.
+
+    Usage in any page under /{Tenant}/...:
+        <TenantGuard Tenant="@Tenant" Context="municipality"> ...uses municipality.Slug... </TenantGuard>
+
+    - Malformed slugs are rejected locally; valid-looking slugs are looked up via the API.
+    - Unknown municipality  -> friendly "Municipality not found" page.
+    - API failure           -> friendly error with a retry button (no technical details).
+    - Success               -> sets TenantState and renders ChildContent with the municipality,
+                               also cascaded so nested components can read it.
+    - Mixed-case URLs (/Burnaby) are redirected to the canonical lowercase URL.
+*@
+@implements IDisposable
+@using MEMS.Public.Services.Api
+@using MEMS.Public.Services.Tenancy
+@inject IMunicipalityApiClient MunicipalityApi
+@inject TenantState TenantState
+@inject NavigationManager Navigation
+@inject ILogger<TenantGuard> Logger
+
+@switch (status)
+{
+    case LoadStatus.Loading:
+        <LoadingSpinner Message="Loading municipality…" />
+        break;
+    case LoadStatus.NotFound:
+        <MunicipalityNotFound Slug="@Tenant" />
+        break;
+    case LoadStatus.Error:
+        <ErrorAlert Message="@errorMessage" OnRetry="ReloadAsync" />
+        break;
+    case LoadStatus.Ready:
+        <CascadingValue Value="municipality">
+            @ChildContent(municipality!)
+        </CascadingValue>
+        break;
+}
+
+@code {
+    private enum LoadStatus { Loading, NotFound, Error, Ready }
+
+    [Parameter, EditorRequired] public string Tenant { get; set; } = "";
+    [Parameter, EditorRequired] public RenderFragment<MunicipalityResponse> ChildContent { get; set; } = default!;
+
+    private LoadStatus status = LoadStatus.Loading;
+    private MunicipalityResponse? municipality;
+    private string? loadedSlug;
+    private string errorMessage = "";
+    private CancellationTokenSource? cts;
+    private int loadVersion;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var slug = TenantSlug.Normalize(Tenant);
+        if (slug != Tenant && TenantSlug.IsValid(slug))
+        {
+            CancelPending();
+            loadedSlug = null;
+            RedirectToCanonical(slug);
+            return;
+        }
+
+        if (slug == loadedSlug && status != LoadStatus.Error) return;
+        await LoadAsync(slug);
+    }
+
+    private Task ReloadAsync() => LoadAsync(TenantSlug.Normalize(Tenant));
+
+    private async Task LoadAsync(string slug)
+    {
+        // Invalidate older requests even when the new route is invalid or uses a cached tenant.
+        CancelPending();
+        var version = loadVersion;
+        loadedSlug = slug;
+        municipality = null;
+
+        if (!TenantSlug.IsValid(slug))
+        {
+            Logger.MalformedSlug(Tenant);
+            TenantState.Clear();
+            status = LoadStatus.NotFound;
+            return;
+        }
+
+        // Reuse the already-resolved tenant when navigating between pages of the same municipality.
+        if (TenantState.Current?.Slug == slug)
+        {
+            municipality = TenantState.Current;
+            status = LoadStatus.Ready;
+            return;
+        }
+
+        cts = new CancellationTokenSource();
+        var token = cts.Token;
+
+        status = LoadStatus.Loading;
+        try
+        {
+            var result = await MunicipalityApi.GetBySlugAsync(slug, token);
+            if (token.IsCancellationRequested || version != loadVersion) return;
+
+            if (result is null)
+            {
+                TenantState.Clear();
+                status = LoadStatus.NotFound;
+                return;
+            }
+
+            municipality = result;
+            TenantState.SetCurrent(result);
+            status = LoadStatus.Ready;
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            // Navigated to another tenant before this lookup finished; the newer load wins.
+        }
+        catch (Exception ex)
+        {
+            if (token.IsCancellationRequested || version != loadVersion) return;
+            Logger.MunicipalityLoadFailed(ex, slug);
+            errorMessage = ex is ApiRequestException
+                ? ex.Message
+                : "We couldn't load this municipality right now. Please try again.";
+            status = LoadStatus.Error;
+        }
+    }
+
+    private void RedirectToCanonical(string slug)
+    {
+        // Replace only the first path segment, keeping the rest of the path and query string.
+        var relative = Navigation.ToBaseRelativePath(Navigation.Uri);
+        var slash = relative.IndexOfAny(['/', '?', '#']);
+        var rest = slash < 0 ? "" : relative[slash..];
+        Navigation.NavigateTo(slug + rest, replace: true);
+    }
+
+    private void CancelPending()
+    {
+        loadVersion++;
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = null;
+    }
+
+    public void Dispose() => CancelPending();
+}

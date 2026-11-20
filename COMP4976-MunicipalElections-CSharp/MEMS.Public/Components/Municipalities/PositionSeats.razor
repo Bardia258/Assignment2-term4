@@ -1,0 +1,39 @@
+@*
+    Positions on the ballot with their seat counts. Ported from A1's _PositionSeats table;
+    rows are now in ballot order (Mayor, Councillor, School Trustee) rather than database order.
+*@
+@using MEMS.Public.Services
+
+@if (Positions is null)
+{
+    <p class="text-secondary small mb-0">Positions couldn't be loaded right now.</p>
+}
+else if (Positions.Count == 0)
+{
+    <p class="text-secondary mb-0">No positions have been added yet.</p>
+}
+else
+{
+    <table class="table table-sm align-middle mb-0 municipality-seats">
+        <thead>
+            <tr>
+                <th scope="col">Position</th>
+                <th scope="col" class="text-end">Seats available</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var position in PositionOrder.Sort(Positions))
+            {
+                <tr @key="position.Id">
+                    <th scope="row" class="fw-normal">@position.Name</th>
+                    <td class="text-end">@position.SeatsAvailable</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    /// <summary>Positions to list, or <c>null</c> if they failed to load (shown as a short note, not an error).</summary>
+    [Parameter] public IReadOnlyList<PositionResponse>? Positions { get; set; }
+}

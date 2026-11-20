@@ -9,6 +9,8 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "DOTNET_ENVIRONMENT": "Development",
+        "Mems__Seed__Enabled": "true",
+        "Mems__Seed__UseDefaultPasswords": "true",
         "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL": "https://localhost:21105",
         "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:22174"
       }
@@ -21,6 +23,8 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "DOTNET_ENVIRONMENT": "Development",
+        "Mems__Seed__Enabled": "true",
+        "Mems__Seed__UseDefaultPasswords": "true",
         "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL": "http://localhost:19176",
         "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "http://localhost:20275"
       }

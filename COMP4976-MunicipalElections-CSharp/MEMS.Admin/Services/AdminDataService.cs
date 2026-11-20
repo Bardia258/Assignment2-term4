@@ -7,6 +7,7 @@ using MEMS.Data.Services;
 using MEMS.Data.Tenancy;
 using MEMS.Data.Observability;
 using MEMS.Shared.Contracts;
+using MEMS.Shared.Identity;
 using MEMS.Shared.Tenancy;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Forms;
@@ -47,6 +48,10 @@ public sealed class AdminDataService(AuthenticationStateProvider authentication,
     public Task<MunicipalityResponse> MunicipalityAsync(int id, bool requireSuper = false) =>
         RunAsync(async op => Municipality(await op.Repository.GetMunicipalityByIdAsync(op.ReadScope, id)
             ?? throw new KeyNotFoundException("Municipality not found in your permitted scope.")), requireSuper, id);
+    public Task<string?> MunicipalityAdministratorUsernameAsync(int id) => RunAsync(op =>
+        op.Db.Users.Where(u => u.MunicipalityId == id
+            && u.AdministratorType == AdministratorType.MunicipalityAdministrator)
+            .OrderBy(u => u.UserName).Select(u => u.UserName).FirstOrDefaultAsync(), superOnly: true, municipalityId: id);
     public Task<List<PositionResponse>> PositionsAsync(int? municipalityId = null) =>
         RunAsync(async op => (await op.Repository.GetPositionsAsync(op.ReadScope)).Select(Position).ToList(), municipalityId: municipalityId);
     public Task<PositionResponse> PositionAsync(int id) => RunAsync(async op =>

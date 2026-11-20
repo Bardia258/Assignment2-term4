@@ -1,0 +1,35 @@
+@*
+    Opens the browser's print dialog through JS interop (window.print). Replaces A1's inline
+    onclick="window.print()" attribute, which needs inline script and breaks under a strict CSP.
+*@
+@inject IJSRuntime JS
+@inject ILogger<PrintButton> Logger
+
+<button type="button" class="btn @CssClass" @onclick="PrintAsync">@Label</button>
+@if (failed)
+{
+    <div class="form-text" role="status">
+        Your browser didn't open the print dialog. Use its Print command instead (Ctrl+P, or ⌘P on a Mac).
+    </div>
+}
+
+@code {
+    [Parameter] public string Label { get; set; } = "Print";
+    [Parameter] public string CssClass { get; set; } = "btn-primary";
+
+    private bool failed;
+
+    private async Task PrintAsync()
+    {
+        failed = false;
+        try
+        {
+            await JS.InvokeVoidAsync("print");
+        }
+        catch (JSException ex)
+        {
+            Logger.PrintFailed(ex);
+            failed = true;
+        }
+    }
+}

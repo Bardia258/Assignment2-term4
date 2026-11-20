@@ -1,0 +1,40 @@
+@*
+    Summary card for one candidate in a list. Ported from A1's Candidates/Index card: photo/name/position/
+    short profile in the body, "View profile" + "Add to guide" in the footer. Changes from A1: initials
+    instead of a grey "No Photo" block, a 3-line profile excerpt instead of a single truncated line,
+    and an Add/Remove toggle that reflects the guide and its seat limits.
+*@
+@using MEMS.Public.Components.Ballot
+
+<article class="card h-100 shadow-sm candidate-card">
+    <div class="card-body d-flex gap-3">
+        <CandidateAvatar Name="@Candidate.Name" PhotoUrl="@Candidate.PhotoUrl" Size="56" />
+        <div class="min-w-0">
+            <h3 class="h6 card-title fw-bold mb-1">
+                <a class="text-body text-decoration-none" href="@ProfileHref">@Candidate.Name</a>
+            </h3>
+            @if (ShowPosition)
+            {
+                <p class="small text-primary mb-1">@Candidate.PositionTitle</p>
+            }
+            <p class="card-text small text-secondary text-clamp-3 mb-0">@Candidate.Profile</p>
+        </div>
+    </div>
+    <div class="card-footer bg-body d-flex flex-wrap align-items-start gap-2">
+        <a class="btn btn-sm btn-outline-primary" href="@ProfileHref"
+           aria-label="@($"View {Candidate.Name}'s profile")">View profile</a>
+        <div class="ms-auto text-end">
+            <BallotToggleButton Candidate="Candidate" />
+        </div>
+    </div>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public CandidateResponse Candidate { get; set; } = default!;
+
+    /// <summary>Show the position title (off when the card already sits under a position heading).</summary>
+    [Parameter] public bool ShowPosition { get; set; }
+
+    // Built from the candidate's own municipality, so a card can never link into another tenant.
+    private string ProfileHref => $"{Candidate.Municipality.Slug}/candidates/{Candidate.Id}";
+}

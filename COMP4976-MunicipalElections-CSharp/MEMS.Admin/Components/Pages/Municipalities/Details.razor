@@ -9,9 +9,13 @@
 {
     @if (_item.LogoUrl is not null) { <img class="admin-preview mb-3" src="@_item.LogoUrl" alt="@($"Logo for {_item.Name}")" /> }
     <dl class="row"><dt class="col-sm-3">Name</dt><dd class="col-sm-9">@_item.Name</dd><dt class="col-sm-3">Slug</dt><dd class="col-sm-9">@_item.Slug</dd><dt class="col-sm-3">Province</dt><dd class="col-sm-9">@_item.Province</dd><dt class="col-sm-3">Election date</dt><dd class="col-sm-9">@_item.ElectionDate.ToString("yyyy-MM-dd")</dd><dt class="col-sm-3">Description</dt><dd class="col-sm-9 biography">@_item.Description</dd></dl>
+    @if (Session?.IsSuperAdmin == true && _administratorUsername is not null)
+    {
+        <p>Administrator username: <code>@_administratorUsername</code></p>
+    }
     @if (DeleteMode)
     {
-        <div class="alert alert-warning">Deletion is permanent. Positions, candidates, and administrator assignments must be removed or reassigned first.</div>
+        <div class="alert alert-warning">Deletion is permanent and also removes an automatically created municipality administrator. Remove positions/candidates and reassign any other administrators first.</div>
         <div class="form-check mb-3"><input id="confirm-delete" class="form-check-input" type="checkbox" @bind="_confirmed" disabled="@(Busy || !InteractiveReady)" /><label class="form-check-label" for="confirm-delete">I confirm deletion of @_item.Name.</label></div>
         <button type="button" class="btn btn-danger" disabled="@(Busy || !InteractiveReady || !_confirmed)" @onclick="Delete">Delete municipality</button>
     }
@@ -25,10 +29,16 @@
 @code {
     [Parameter] public int Id { get; set; }
     private MunicipalityResponse? _item;
+    private string? _administratorUsername;
     private bool _confirmed;
     private bool DeleteMode => new Uri(Navigation.Uri).AbsolutePath.EndsWith("/delete", StringComparison.OrdinalIgnoreCase);
     protected override Task OnParametersSetAsync() => Run(async () =>
-    { _item = null; _confirmed = false; Session = await Data.SessionAsync(); _item = await Data.MunicipalityAsync(Id, DeleteMode); });
+    {
+        _item = null; _administratorUsername = null; _confirmed = false;
+        Session = await Data.SessionAsync();
+        _item = await Data.MunicipalityAsync(Id, DeleteMode);
+        if (Session.IsSuperAdmin) _administratorUsername = await Data.MunicipalityAdministratorUsernameAsync(Id);
+    });
     private Task Delete() => Run(async () =>
     {
         if (!_confirmed) return;
