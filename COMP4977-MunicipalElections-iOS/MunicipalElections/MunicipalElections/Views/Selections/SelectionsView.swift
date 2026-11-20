@@ -9,54 +9,52 @@ struct SelectionsView: View {
     @State private var actionError: String?
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if selections.isLoading && selections.selections.isEmpty {
-                    ProgressView("Loading Selections...")
-                } else if let error = selections.errorMessage, selections.selections.isEmpty {
-                    ContentUnavailableView {
-                        Label("Couldn't Load Selections", systemImage: "exclamationmark.icloud")
-                    } description: {
-                        Text(error)
-                    } actions: {
-                        Button("Retry") { Task { await selections.refresh() } }
-                    }
-                } else if selections.selections.isEmpty {
-                    ScrollView {
-                        ContentUnavailableView {
-                            Label("No Selections Yet", systemImage: "checklist")
-                        } description: {
-                            Text("Open a candidate from \(store.current?.name ?? "your city") and tap Add Selection.")
-                        }
-                        .padding(.top, 60)
-                    }
-                    .refreshable { await selections.refresh() }
-                } else {
-                    list
+        Group {
+            if selections.isLoading && selections.selections.isEmpty {
+                ProgressView("Loading Selections...")
+            } else if let error = selections.errorMessage, selections.selections.isEmpty {
+                ContentUnavailableView {
+                    Label("Couldn't Load Selections", systemImage: "exclamationmark.icloud")
+                } description: {
+                    Text(error)
+                } actions: {
+                    Button("Retry") { Task { await selections.refresh() } }
                 }
+            } else if selections.selections.isEmpty {
+                ScrollView {
+                    ContentUnavailableView {
+                        Label("No Selections Yet", systemImage: "checklist")
+                    } description: {
+                        Text("Open a candidate from \(store.current?.name ?? "your city") and tap Add Selection.")
+                    }
+                    .padding(.top, 60)
+                }
+                .refreshable { await selections.refresh() }
+            } else {
+                list
             }
-            .navigationTitle("My Candidate Selections")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { CityBadge(municipality: store.current) }
-            }
-            .sheet(item: $editing) { selection in
-                SelectionEditorView(mode: .edit(selection))
-            }
-            .confirmationDialog("Delete this selection?", isPresented: Binding(
-                get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }
-            ), titleVisibility: .visible, presenting: pendingDelete) { selection in
-                Button("Delete \(selection.candidateName)", role: .destructive) { delete(selection) }
-            } message: { selection in
-                Text("\(selection.candidateName) and your notes will be removed.")
-            }
-            .alert("Something Went Wrong", isPresented: Binding(
-                get: { actionError != nil }, set: { if !$0 { actionError = nil } }
-            )) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(actionError ?? "")
-            }
+        }
+        .navigationTitle("My Candidate Selections")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) { CityBadge(municipality: store.current) }
+        }
+        .sheet(item: $editing) { selection in
+            SelectionEditorView(mode: .edit(selection))
+        }
+        .confirmationDialog("Delete this selection?", isPresented: Binding(
+            get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }
+        ), titleVisibility: .visible, presenting: pendingDelete) { selection in
+            Button("Delete \(selection.candidateName)", role: .destructive) { delete(selection) }
+        } message: { selection in
+            Text("\(selection.candidateName) and your notes will be removed.")
+        }
+        .alert("Something Went Wrong", isPresented: Binding(
+            get: { actionError != nil }, set: { if !$0 { actionError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(actionError ?? "")
         }
     }
 
@@ -156,7 +154,9 @@ private struct SelectionRow: View {
 }
 
 #Preview {
-    SelectionsView()
-        .environmentObject(SelectionsStore())
-        .environmentObject(MunicipalityStore())
+    NavigationStack {
+        SelectionsView()
+            .environmentObject(SelectionsStore())
+            .environmentObject(MunicipalityStore())
+    }
 }

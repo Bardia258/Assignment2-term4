@@ -6,14 +6,16 @@ struct RegisterView: View {
 
     private enum Field { case name, email, password }
     @FocusState private var focusedField: Field?
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @ScaledMetric(relativeTo: .body) private var topSpacing: CGFloat = 40
 
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
                 Text("Create Account")
-                    .font(.largeTitle)
+                    .font(verticalSizeClass == .compact ? .title : .largeTitle)
                     .fontWeight(.bold)
-                    .padding(.top, 40)
+                    .padding(.top, verticalSizeClass == .compact ? topSpacing * 0.25 : topSpacing)
 
                 VStack(spacing: 15) {
                     TextField("Full Name", text: $viewModel.name)
@@ -91,8 +93,8 @@ struct RegisterView: View {
                 .padding(.horizontal)
                 .disabled(!canSubmit)
             }
-            .frame(maxWidth: 500)
-            .frame(maxWidth: .infinity)
+            .padding(.bottom)
+            .readableWidth()
         }
         .scrollDismissesKeyboard(.interactively)
         .navigationBarTitleDisplayMode(.inline)

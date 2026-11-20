@@ -60,20 +60,94 @@ struct ContentView: View {
     }
 }
 
+/// The four main sections, shared by the iPhone tab bar and the iPad sidebar.
+enum AppSection: String, CaseIterable, Identifiable, Hashable {
+    case home, directory, selections, profile
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .home: return "Home"
+        case .directory: return "Directory"
+        case .selections: return "Selections"
+        case .profile: return "Profile"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .home: return "house"
+        case .directory: return "magnifyingglass"
+        case .selections: return "checklist"
+        case .profile: return "person.circle"
+        }
+    }
+
+    /// The section's root screen. Each container wraps it in its own NavigationStack.
+    @MainActor @ViewBuilder
+    var rootView: some View {
+        switch self {
+        case .home: HomeView()
+        case .directory: CandidateDirectoryView()
+        case .selections: SelectionsView()
+        case .profile: ProfileView()
+        }
+    }
+}
+
+/// iPhone: a tab bar with one NavigationStack per tab.
+/// iPad: a NavigationSplitView with a sidebar (shown beside the content in
+/// landscape, as an overlay in portrait).
+/// The container is chosen by device, so rotating never rebuilds it: the
+/// selected section, pushed screens, open sheets and typed text all survive.
 struct MainTabView: View {
+    @State private var tab: AppSection = .home
+    @State private var sidebarSelection: AppSection? = .home
+    @EnvironmentObject private var selections: SelectionsStore
+    @EnvironmentObject private var store: MunicipalityStore
+
     var body: some View {
-        TabView {
-            HomeView()
-                .tabItem { Label("Home", systemImage: "house") }
+        if DeviceKind.isPad {
+            splitView
+        } else {
+            tabView
+        }
+    }
 
-            CandidateDirectoryView()
-                .tabItem { Label("Directory", systemImage: "magnifyingglass") }
+    private var tabView: some View {
+        TabView(selection: $tab) {
+            ForEach(AppSection.allCases) { section in
+                NavigationStack { section.rootView }
+                    .tabItem { Label(section.title, systemImage: section.systemImage) }
+                    .tag(section)
+            }
+        }
+    }
 
-            SelectionsView()
-                .tabItem { Label("Selections", systemImage: "checklist") }
-
-            ProfileView()
-                .tabItem { Label("Profile", systemImage: "person.circle") }
+    private var splitView: some View {
+        NavigationSplitView {
+            List(selection: $sidebarSelection) {
+                Section {
+                    ForEach(AppSection.allCases) { section in
+                        NavigationLink(value: section) {
+                            Label(section.title, systemImage: section.systemImage)
+                        }
+                        .badge(section == .selections ? selections.selections.count : 0)
+                    }
+                } header: {
+                    CityBadge(municipality: store.current)
+                        .textCase(nil)
+                        .padding(.bottom, 4)
+                }
+            }
+            .navigationTitle("Elections")
+        } detail: {
+            let section = sidebarSelection ?? .home
+            NavigationStack { section.rootView }
+                // A fresh stack per section, so screens pushed in one section
+                // don't appear under another.
+                .id(section)
         }
     }
 }

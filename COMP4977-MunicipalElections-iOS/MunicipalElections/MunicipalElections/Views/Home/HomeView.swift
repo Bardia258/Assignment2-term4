@@ -6,40 +6,38 @@ struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
 
     var body: some View {
-        NavigationStack {
-            List {
-                if let municipality = store.current {
-                    Section {
-                        MunicipalityLabel(name: store.cityLabel, logoUrl: municipality.logoUrl, size: 48)
-                            .font(.title3.weight(.semibold))
-                        Text(municipality.description)
-                        Label("Election day: \(municipality.formattedElectionDate)", systemImage: "calendar")
-                            .font(.subheadline)
-                            .foregroundStyle(.red)
-                    }
+        List {
+            if let municipality = store.current {
+                Section {
+                    MunicipalityLabel(name: store.cityLabel, logoUrl: municipality.logoUrl, size: 48)
+                        .font(.title3.weight(.semibold))
+                    Text(municipality.description)
+                    Label("Election day: \(municipality.formattedElectionDate)", systemImage: "calendar")
+                        .font(.subheadline)
+                        .foregroundStyle(.red)
                 }
+            }
 
-                Section("Offices on the Ballot") {
-                    if viewModel.isLoading && viewModel.offices.isEmpty {
-                        ProgressView()
-                    } else if let error = viewModel.errorMessage, viewModel.offices.isEmpty {
-                        Text(error).foregroundStyle(.red)
-                        Button("Retry") { Task { await viewModel.load(for: store.current) } }
-                    } else if viewModel.offices.isEmpty {
-                        Text("No offices listed yet.").foregroundStyle(.secondary)
-                    } else {
-                        ForEach(viewModel.offices) { office in
-                            NavigationLink(destination: OfficeCandidatesView(office: office)) {
-                                OfficeRow(office: office)
-                            }
+            Section("Offices on the Ballot") {
+                if viewModel.isLoading && viewModel.offices.isEmpty {
+                    ProgressView()
+                } else if let error = viewModel.errorMessage, viewModel.offices.isEmpty {
+                    Text(error).foregroundStyle(.red)
+                    Button("Retry") { Task { await viewModel.load(for: store.current) } }
+                } else if viewModel.offices.isEmpty {
+                    Text("No offices listed yet.").foregroundStyle(.secondary)
+                } else {
+                    ForEach(viewModel.offices) { office in
+                        NavigationLink(destination: OfficeCandidatesView(office: office)) {
+                            OfficeRow(office: office)
                         }
                     }
                 }
             }
-            .navigationTitle(store.current?.name ?? "Home")
-            .refreshable { await viewModel.load(for: store.current) }
-            .task(id: store.current?.id) { await viewModel.load(for: store.current) }
         }
+        .navigationTitle(store.current?.name ?? "Home")
+        .refreshable { await viewModel.load(for: store.current) }
+        .task(id: store.current?.id) { await viewModel.load(for: store.current) }
     }
 }
 
@@ -89,6 +87,8 @@ private struct OfficeCandidatesView: View {
 }
 
 #Preview {
-    HomeView()
-        .environmentObject(MunicipalityStore())
+    NavigationStack {
+        HomeView()
+            .environmentObject(MunicipalityStore())
+    }
 }

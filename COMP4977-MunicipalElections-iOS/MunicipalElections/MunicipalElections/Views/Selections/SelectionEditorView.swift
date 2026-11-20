@@ -14,6 +14,8 @@ struct SelectionEditorView: View {
     @State private var notes: String
     @State private var isSaving = false
     @State private var errorMessage: String?
+    /// About five lines of text at the current Dynamic Type size.
+    @ScaledMetric(relativeTo: .body) private var notesMinHeight: CGFloat = 120
 
     init(mode: Mode) {
         self.mode = mode
@@ -54,7 +56,7 @@ struct SelectionEditorView: View {
 
                 Section {
                     TextEditor(text: $notes)
-                        .frame(minHeight: 120)
+                        .frame(minHeight: notesMinHeight)
                         .accessibilityLabel("Notes")
                 } header: {
                     Text("Notes (optional)")

@@ -88,5 +88,5 @@ iPhone portrait/landscape, iPad portrait/landscape, adjusting on rotation withou
 
 ## Progress
 - [x] Phase 5 (committed)
-- [ ] Phase 6
+- [x] Phase 6 (committed)
 - [ ] Phase 7

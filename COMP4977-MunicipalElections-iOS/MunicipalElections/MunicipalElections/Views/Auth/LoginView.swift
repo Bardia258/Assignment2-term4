@@ -6,21 +6,33 @@ struct LoginView: View {
 
     private enum Field { case email, password }
     @FocusState private var focusedField: Field?
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @ScaledMetric(relativeTo: .largeTitle) private var iconSize: CGFloat = 60
+    @ScaledMetric(relativeTo: .body) private var topSpacing: CGFloat = 40
+
+    /// iPhone landscape: less vertical room, so a smaller header.
+    private var isCompactHeight: Bool { verticalSizeClass == .compact }
 
     var body: some View {
         NavigationStack {
             // ScrollView so the form stays reachable in landscape and with the keyboard up.
             ScrollView {
                 VStack(spacing: 20) {
-                    Image(systemName: "building.columns.fill")
-                        .font(.system(size: 60))
-                        .foregroundStyle(.blue)
-                        .padding(.top, 40)
-                        .accessibilityHidden(true)
+                    // Icon above the title in portrait, beside it in landscape.
+                    let header = isCompactHeight
+                        ? AnyLayout(HStackLayout(spacing: 12))
+                        : AnyLayout(VStackLayout(spacing: 20))
+                    header {
+                        Image(systemName: "building.columns.fill")
+                            .font(.system(size: isCompactHeight ? iconSize * 0.6 : iconSize))
+                            .foregroundStyle(.blue)
+                            .accessibilityHidden(true)
 
-                    Text("Welcome Back")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
+                        Text("Welcome Back")
+                            .font(isCompactHeight ? .title : .largeTitle)
+                            .fontWeight(.bold)
+                    }
+                    .padding(.top, isCompactHeight ? topSpacing * 0.4 : topSpacing)
 
                     VStack(spacing: 15) {
                         TextField("Email", text: $viewModel.email)
@@ -74,8 +86,8 @@ struct LoginView: View {
                             .font(.footnote)
                     }
                 }
-                .frame(maxWidth: 500)
-                .frame(maxWidth: .infinity)
+                .padding(.bottom)
+                .readableWidth()
             }
             .scrollDismissesKeyboard(.interactively)
             .toolbar(.hidden, for: .navigationBar)

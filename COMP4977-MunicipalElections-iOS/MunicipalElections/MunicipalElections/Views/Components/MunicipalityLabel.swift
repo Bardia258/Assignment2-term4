@@ -2,7 +2,9 @@ import SwiftUI
 
 struct MunicipalityLogo: View {
     let logoUrl: String?
+    /// Size at the default text size; scales with Dynamic Type.
     var size: CGFloat = 32
+    @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
 
     var body: some View {
         AsyncImage(url: APIClient.imageURL(for: logoUrl)) { phase in
@@ -16,7 +18,7 @@ struct MunicipalityLogo: View {
                     .foregroundColor(.secondary)
             }
         }
-        .frame(width: size, height: size)
+        .frame(width: size * scale, height: size * scale)
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .accessibilityHidden(true)

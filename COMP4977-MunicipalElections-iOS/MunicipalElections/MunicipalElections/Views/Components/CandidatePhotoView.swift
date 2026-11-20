@@ -5,6 +5,7 @@ import SwiftUI
 /// layout, and a failed or missing photo shows a placeholder instead of a spinner.
 struct CandidatePhotoView: View {
     let photoUrl: String?
+    @ScaledMetric(relativeTo: .largeTitle) private var maxPlaceholderSize: CGFloat = 120
 
     var body: some View {
         Color(.secondarySystemBackground)
@@ -34,7 +35,7 @@ struct CandidatePhotoView: View {
             .scaledToFit()
             .padding(8)
             .foregroundStyle(.secondary)
-            .frame(maxWidth: 120, maxHeight: 120)
+            .frame(maxWidth: maxPlaceholderSize, maxHeight: maxPlaceholderSize)
     }
 }
 

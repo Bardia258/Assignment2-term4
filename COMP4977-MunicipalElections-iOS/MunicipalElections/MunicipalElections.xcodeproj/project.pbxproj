@@ -36,6 +36,7 @@
 		B4A200000000000000000025 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000015 /* HomeView.swift */; };
 		B4A200000000000000000026 /* CandidatePhotoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000016 /* CandidatePhotoView.swift */; };
 		B4A200000000000000000027 /* ErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000017 /* ErrorBanner.swift */; };
+		B4A200000000000000000055 /* AdaptiveLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000054 /* AdaptiveLayout.swift */; };
 		B4A200000000000000000028 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000018 /* KeychainService.swift */; };
 		B4A200000000000000000029 /* JWT.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000019 /* JWT.swift */; };
 		B4A20000000000000000002A /* AuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A20000000000000000001A /* AuthSession.swift */; };
@@ -96,6 +97,7 @@
 		B4A200000000000000000015 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		B4A200000000000000000016 /* CandidatePhotoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CandidatePhotoView.swift; sourceTree = "<group>"; };
 		B4A200000000000000000017 /* ErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBanner.swift; sourceTree = "<group>"; };
+		B4A200000000000000000054 /* AdaptiveLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveLayout.swift; sourceTree = "<group>"; };
 		B4A200000000000000000018 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 		B4A200000000000000000019 /* JWT.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JWT.swift; sourceTree = "<group>"; };
 		B4A20000000000000000001A /* AuthSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSession.swift; sourceTree = "<group>"; };
@@ -312,6 +314,7 @@
 				A12000013088000000000002 /* MunicipalityLabel.swift */,
 				B4A200000000000000000016 /* CandidatePhotoView.swift */,
 				B4A200000000000000000017 /* ErrorBanner.swift */,
+				B4A200000000000000000054 /* AdaptiveLayout.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -500,6 +503,7 @@
 				B4A200000000000000000025 /* HomeView.swift in Sources */,
 				B4A200000000000000000026 /* CandidatePhotoView.swift in Sources */,
 				B4A200000000000000000027 /* ErrorBanner.swift in Sources */,
+				B4A200000000000000000055 /* AdaptiveLayout.swift in Sources */,
 				B4A200000000000000000028 /* KeychainService.swift in Sources */,
 				B4A200000000000000000029 /* JWT.swift in Sources */,
 				B4A20000000000000000002A /* AuthSession.swift in Sources */,
