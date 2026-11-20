@@ -8,7 +8,7 @@ This repository contains both the COMP4976 C# project and the COMP4977 iOS proje
 Assignment 2 running and hosting:
 
 - **COMP4976 runs locally.** Install the .NET 10 SDK and start Docker Desktop with Linux containers. Open `COMP4976-MunicipalElections-CSharp/MEMS.sln`, choose `MEMS.AppHost` as the startup project, and run its `https` profile. Aspire starts SQL Server, the API, Admin, and Public sites; migrations and development accounts are prepared automatically. The local Admin accounts use `P@$$w0rd` to log in. Accept the development HTTPS certificate prompt if shown. This solution does not use Azure deployment.
-- **COMP4977 uses a hosted backend.** Open `COMP4977-MunicipalElections-iOS/MunicipalElections.slnx` for the SQLite/JWT backend. Only `MunicipalElections.Web` is deployed to the Azure Web App. Docker Desktop and the MEMS SQL Server container are not required. The SwiftUI iOS frontend is located in `COMP4977-MunicipalElections-iOS/MunicipalElections` and uses Firebase Authentication and Firestore for user profiles and saved selections.
+- **COMP4977 uses a hosted backend.** Open `COMP4977-MunicipalElections-iOS/MunicipalElections.slnx` for the SQLite/JWT backend. Only `MunicipalElections.Web` is deployed to the Azure Web App. Docker Desktop and the MEMS SQL Server container are not required. The SwiftUI iOS frontend is located in `COMP4977-MunicipalElections-iOS/MunicipalElections`
 
 Current iOS backend address: [Azure service](https://assignment2-term4-dbe7c6evbpajetbf.westus3-01.azurewebsites.net/). Deployment, migrations and seeding have been completed; live directory reads returned the expected sample data.
 
