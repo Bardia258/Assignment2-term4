@@ -44,6 +44,8 @@
 		B4A20000000000000000002D /* UserProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A20000000000000000001D /* UserProfileService.swift */; };
 		B4A20000000000000000002E /* SelectionEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A20000000000000000001E /* SelectionEditorView.swift */; };
 		B4A20000000000000000002F /* CandidateSelectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A20000000000000000001F /* CandidateSelectionService.swift */; };
+		B4A200000000000000000051 /* FirestoreRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000050 /* FirestoreRequest.swift */; };
+		B4A200000000000000000053 /* SyncStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A200000000000000000052 /* SyncStatus.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -102,6 +104,8 @@
 		B4A20000000000000000001D /* UserProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileService.swift; sourceTree = "<group>"; };
 		B4A20000000000000000001E /* SelectionEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionEditorView.swift; sourceTree = "<group>"; };
 		B4A20000000000000000001F /* CandidateSelectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CandidateSelectionService.swift; sourceTree = "<group>"; };
+		B4A200000000000000000050 /* FirestoreRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreRequest.swift; sourceTree = "<group>"; };
+		B4A200000000000000000052 /* SyncStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatus.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -218,6 +222,7 @@
 				B4A20000000000000000001B /* FirebaseAuthService.swift */,
 				B4A20000000000000000001D /* UserProfileService.swift */,
 				B4A20000000000000000001F /* CandidateSelectionService.swift */,
+				B4A200000000000000000050 /* FirestoreRequest.swift */,
 			);
 			path = Firebase;
 			sourceTree = "<group>";
@@ -230,6 +235,7 @@
 				B4A200000000000000000013 /* MunicipalityStore.swift */,
 				B4A20000000000000000001C /* HomeViewModel.swift */,
 				9AA24D383086FF4A002131F1 /* SelectionsStore.swift */,
+				B4A200000000000000000052 /* SyncStatus.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -500,6 +506,8 @@
 				B4A20000000000000000002B /* FirebaseAuthService.swift in Sources */,
 				B4A20000000000000000002D /* UserProfileService.swift in Sources */,
 				B4A20000000000000000002F /* CandidateSelectionService.swift in Sources */,
+				B4A200000000000000000051 /* FirestoreRequest.swift in Sources */,
+				B4A200000000000000000053 /* SyncStatus.swift in Sources */,
 				B4A20000000000000000002E /* SelectionEditorView.swift in Sources */,
 				B4A20000000000000000002C /* HomeViewModel.swift in Sources */,
 			);

@@ -112,6 +112,7 @@ struct CandidateDetailView: View {
                 }
                 .controlSize(.large)
             } else {
+                let seatLimitMessage = selections.seatLimitMessage(for: candidate)
                 Button { editor = .add(candidate) } label: {
                     Label("Add Selection", systemImage: "plus.circle.fill")
                         .font(.headline)
@@ -119,7 +120,21 @@ struct CandidateDetailView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
-                .disabled(selections.isLoading)
+                .disabled(selections.isLoading || seatLimitMessage != nil)
+                .accessibilityHint(seatLimitMessage ?? "")
+
+                if let seatLimitMessage {
+                    Label(seatLimitMessage, systemImage: "person.crop.circle.badge.exclamationmark")
+                        .font(.footnote)
+                        .foregroundStyle(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else if let seats = selections.seats(for: candidate) {
+                    let chosen = selections.chosenCount(positionId: candidate.positionId ?? candidate.position?.id,
+                                                        positionName: candidate.positionTitle)
+                    Text("\(chosen) of \(seats) \(candidate.positionTitle) chosen")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             if let actionError {

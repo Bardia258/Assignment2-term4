@@ -45,7 +45,7 @@ service cloud.firestore {
                                    'municipalityName', 'municipalityId', 'notes', 'dateCreated', 'dateModified'])
           && data.keys().hasOnly(['id', 'userEmail', 'candidateId', 'candidateName', 'positionName',
                                   'municipalityName', 'municipalityId', 'notes', 'dateCreated', 'dateModified',
-                                  'photoUrl'])
+                                  'photoUrl', 'positionId'])
           && data.id == selectionId
           && data.userEmail == myEmail()
           && data.candidateId is int && data.candidateId > 0
@@ -55,6 +55,8 @@ service cloud.firestore {
           && data.municipalityId is int && data.municipalityId > 0
           && data.notes is string && data.notes.size() <= 500
           && (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 500))
+          // positionId (Phase 5, used for seat limits) is optional so older records stay valid.
+          && (!('positionId' in data) || (data.positionId is int && data.positionId > 0))
           && data.dateCreated is timestamp
           && data.dateModified == request.time;
       }

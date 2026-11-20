@@ -62,17 +62,26 @@ final class APIClient {
         _ = try await send(path: path, method: "POST", body: try encoder.encode(body), requiresAuth: requiresAuth)
     }
 
-    /// `requiresAuth` attaches the Keychain JWT as `Authorization: Bearer`.
-    /// A missing/expired token or a 401 posts `.sessionExpired` so `AuthSession` logs out.
+    /// While logged in, every request carries the Keychain JWT as
+    /// `Authorization: Bearer` (the directory endpoints are public, but the API
+    /// can then identify the user). `requiresAuth` makes the token mandatory:
+    /// without a valid one the request isn't sent and the session expires.
+    /// A 401 on a request that carried a token posts `.sessionExpired` so
+    /// `AuthSession` logs out with the "Session expired" message.
     func send(path: String, method: String = "GET", query: [URLQueryItem] = [],
               body: Data? = nil, requiresAuth: Bool = false) async throws -> Data {
         var token: String?
-        if requiresAuth {
-            guard let stored = KeychainService.read(.authToken), !JWT.isExpired(stored) else {
+        if let stored = KeychainService.read(.authToken) {
+            if JWT.isExpired(stored) {
+                // Pre-request expiry check: log out instead of sending a dead token.
                 NotificationCenter.default.post(name: .sessionExpired, object: nil)
-                throw APIError.sessionExpired
+                if requiresAuth { throw APIError.sessionExpired }
+            } else {
+                token = stored
             }
-            token = stored
+        } else if requiresAuth {
+            NotificationCenter.default.post(name: .sessionExpired, object: nil)
+            throw APIError.sessionExpired
         }
 
         var components = URLComponents(url: Self.baseURL.appendingPathComponent(path),
@@ -102,12 +111,12 @@ final class APIClient {
             throw APIError.invalidResponse
         }
         guard (200..<300).contains(http.statusCode) else {
-            if http.statusCode == 401 && requiresAuth {
+            if http.statusCode == 401 && token != nil {
                 NotificationCenter.default.post(name: .sessionExpired, object: nil)
                 throw APIError.sessionExpired
             }
             throw APIError.http(statusCode: http.statusCode, data: data, decoder: decoder,
-                                isAuthenticated: requiresAuth)
+                                isAuthenticated: token != nil)
         }
         return data
     }

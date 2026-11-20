@@ -30,6 +30,11 @@ struct FirestoreServiceError: LocalizedError {
 
     init(message: String) { self.message = message }
 
+    static let offline = FirestoreServiceError(message: "You appear to be offline, try again.")
+
+    static let invalidData = FirestoreServiceError(
+        message: "Some saved data couldn't be read. Pull to refresh, or delete and re-add the selection.")
+
     static func isPermissionDenied(_ error: Error) -> Bool {
         let nsError = error as NSError
         return nsError.domain == FirestoreErrorDomain
@@ -42,6 +47,10 @@ struct FirestoreServiceError: LocalizedError {
             return
         }
         let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain {
+            message = Self.offline.message
+            return
+        }
         guard nsError.domain == FirestoreErrorDomain,
               let code = FirestoreErrorCode.Code(rawValue: nsError.code) else {
             message = "Something went wrong saving your data. Please try again."
@@ -51,9 +60,15 @@ struct FirestoreServiceError: LocalizedError {
         case .permissionDenied:
             message = "You don't have permission to access this data. Try logging out and back in."
         case .unauthenticated:
-            message = "Your session has ended. Please log in again."
+            message = AuthSession.expiredMessage
         case .unavailable, .deadlineExceeded:
-            message = "Couldn't reach the server. Check your internet connection and try again."
+            message = Self.offline.message
+        case .notFound:
+            message = "That record no longer exists. Pull to refresh."
+        case .alreadyExists:
+            message = "That record already exists. Pull to refresh."
+        case .dataLoss:
+            message = Self.invalidData.message
         case .resourceExhausted:
             message = "Too many requests right now. Please wait a moment and try again."
         case .invalidArgument, .failedPrecondition:

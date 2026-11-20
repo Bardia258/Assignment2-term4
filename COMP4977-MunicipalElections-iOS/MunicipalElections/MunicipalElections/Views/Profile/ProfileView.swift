@@ -3,6 +3,8 @@ import SwiftUI
 struct ProfileView: View {
     @EnvironmentObject private var session: AuthSession
     @EnvironmentObject private var store: MunicipalityStore
+    @EnvironmentObject private var selections: SelectionsStore
+    @EnvironmentObject private var syncStatus: SyncStatus
     @State private var confirmingLogout = false
     @State private var changingCity = false
 
@@ -38,6 +40,44 @@ struct ProfileView: View {
                 }
 
                 Section {
+                    LabeledContent("Email", value: session.email ?? "")
+                    LabeledContent("Current city", value: store.current?.name ?? "Not set")
+                } header: {
+                    Text("Account")
+                }
+
+                Section {
+                    LabeledContent("In \(store.current?.name ?? "this city")",
+                                   value: selections.isLoading && selections.selections.isEmpty
+                                       ? "…" : "\(selections.selections.count)")
+                    if let total = selections.allCitiesCount {
+                        LabeledContent("All cities", value: "\(total)")
+                    }
+                    LabeledContent("Last synced") {
+                        if let date = syncStatus.lastSynced {
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text(date.formatted(date: .abbreviated, time: .shortened))
+                                Text(date, style: .relative).font(.caption) + Text(" ago").font(.caption)
+                            }
+                        } else {
+                            Text("Not yet")
+                        }
+                    }
+                    Button("Sync Now") { Task { await selections.refresh() } }
+                        .disabled(selections.isLoading)
+                } header: {
+                    Text("Saved Selections")
+                } footer: {
+                    if let error = selections.errorMessage {
+                        Text(error).foregroundStyle(.red)
+                    } else if let warning = selections.dataWarning {
+                        Text(warning).foregroundStyle(.orange)
+                    } else {
+                        Text("Updated after every successful load or save to Firestore.")
+                    }
+                }
+
+                Section {
                     Button("Log Out", role: .destructive) { confirmingLogout = true }
                 }
 
@@ -66,4 +106,6 @@ struct ProfileView: View {
     ProfileView()
         .environmentObject(AuthSession())
         .environmentObject(MunicipalityStore())
+        .environmentObject(SelectionsStore())
+        .environmentObject(SyncStatus())
 }

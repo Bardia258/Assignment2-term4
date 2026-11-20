@@ -41,4 +41,10 @@ final class AuthService {
         try await api.post("api/auth/register",
             body: RegisterRequest(username: email, email: email, password: password, fullName: fullName))
     }
+
+    // TODO(api-auth-me): add the session check once the partner deploys GET /api/auth/me.
+    //   func currentUser() async throws -> CurrentUserResponse {
+    //       try await api.get("api/auth/me", requiresAuth: true)
+    //   }
+    // AuthSession.validateWithServer() (see AuthSession.swift) will call it at launch.
 }

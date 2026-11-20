@@ -88,8 +88,18 @@ final class AuthSession: ObservableObject {
             self.token = token
             self.email = email
             scheduleExpiry(for: token)
+            // TODO(api-auth-me): call validateWithServer() here once GET /api/auth/me is deployed.
         }
     }
+
+    // TODO(api-auth-me): server-side session check at launch, not built yet because the
+    // partner hasn't deployed GET /api/auth/me. Planned behaviour:
+    //   - 200        -> keep the session.
+    //   - 401        -> logout(notice: Self.expiredMessage)  ("Session expired").
+    //   - 404 / 5xx / offline -> keep the session; the token is still valid locally and
+    //     the endpoint may just be missing or unreachable.
+    // APIClient already posts `.sessionExpired` on a 401 for any request that carried
+    // the token, so the 401 branch only needs `requiresAuth: true` on that call.
 
     private func scheduleExpiry(for token: String) {
         expiryTask?.cancel()

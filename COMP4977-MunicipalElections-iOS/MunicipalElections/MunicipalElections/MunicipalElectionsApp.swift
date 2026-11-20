@@ -14,6 +14,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         FirebaseService.configure()
+        NetworkMonitor.start()
         return true
     }
 }
@@ -24,6 +25,7 @@ struct MunicipalElectionsApp: App {
     @StateObject private var session = AuthSession()
     @StateObject private var municipalityStore = MunicipalityStore()
     @StateObject private var selections = SelectionsStore()
+    @StateObject private var syncStatus = SyncStatus()
 
     var body: some Scene {
         WindowGroup {
@@ -31,6 +33,7 @@ struct MunicipalElectionsApp: App {
                 .environmentObject(session)
                 .environmentObject(municipalityStore)
                 .environmentObject(selections)
+                .environmentObject(syncStatus)
         }
     }
 }

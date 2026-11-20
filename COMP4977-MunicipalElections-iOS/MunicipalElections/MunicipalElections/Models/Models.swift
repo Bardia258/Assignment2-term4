@@ -41,7 +41,7 @@ struct Candidate: Identifiable, Codable, Hashable {
     let municipalityId: Int
     let municipalityName: String?
     let municipality: Municipality?
-    // Returned by the API but ignored in A1; needed for seat limits later.
+    // Returned by the API but ignored in A1; used for seat limits.
     let positionId: Int?
     let position: Position?
 
@@ -83,6 +83,8 @@ struct CandidateSelection: Identifiable, Codable, Equatable {
     let candidateId: Int
     let candidateName: String
     let positionName: String
+    /// Added in Phase 5 for seat limits; records saved earlier only have `positionName`.
+    let positionId: Int?
     let municipalityName: String
     let municipalityId: Int
     let photoUrl: String?

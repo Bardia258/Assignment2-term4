@@ -24,6 +24,8 @@ final class MunicipalityStore: ObservableObject {
     private let api: APIClient
     private let profiles: UserProfileService
     private var activeEmail: String?
+    /// Set by the app so successful Firestore reads/writes update "Last synced".
+    var syncStatus: SyncStatus?
 
     init(api: APIClient = .shared, profiles: UserProfileService = .shared) {
         self.api = api
@@ -47,8 +49,9 @@ final class MunicipalityStore: ObservableObject {
         do {
             async let list = api.fetchMunicipalities()
             async let profile = profiles.fetchProfile(email: email)
-            let (loaded, saved) = try await (list, profile)
+            let (loaded, (saved, fromCache)) = try await (list, profile)
             guard activeEmail == email else { return }
+            if !fromCache { syncStatus?.markSynced() }
             municipalities = loaded
             if let saved, let match = loaded.first(where: { $0.id == saved.municipalityId }) {
                 current = match
@@ -76,6 +79,7 @@ final class MunicipalityStore: ObservableObject {
         do {
             try await profiles.saveMunicipality(municipality, email: email)
             guard activeEmail == email else { return false }
+            syncStatus?.markSynced()
             current = municipality
             state = .ready
             return true

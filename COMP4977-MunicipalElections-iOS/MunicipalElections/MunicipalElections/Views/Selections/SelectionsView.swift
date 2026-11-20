@@ -67,14 +67,31 @@ struct SelectionsView: View {
                     .font(.footnote)
                     .foregroundStyle(.red)
             }
-            ForEach(selections.selections) { selection in
-                SelectionRow(selection: selection,
-                             onEdit: { editing = selection },
-                             onDelete: { pendingDelete = selection })
-                    .swipeActions(edge: .trailing) {
-                        Button("Delete", role: .destructive) { pendingDelete = selection }
-                        Button("Edit") { editing = selection }.tint(.blue)
+            if let warning = selections.dataWarning {
+                Label(warning, systemImage: "wifi.exclamationmark")
+                    .font(.footnote)
+                    .foregroundStyle(.orange)
+            }
+            ForEach(selections.positionGroups) { group in
+                Section {
+                    ForEach(group.selections) { selection in
+                        SelectionRow(selection: selection,
+                                     onEdit: { editing = selection },
+                                     onDelete: { pendingDelete = selection })
+                            .swipeActions(edge: .trailing) {
+                                Button("Delete", role: .destructive) { pendingDelete = selection }
+                                Button("Edit") { editing = selection }.tint(.blue)
+                            }
                     }
+                } header: {
+                    HStack {
+                        Text(group.name)
+                        Spacer()
+                        Text(group.chosenSummary)
+                            .foregroundStyle(group.seats.map { group.selections.count >= $0 } == true ? .green : .secondary)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
             }
         }
         .refreshable { await selections.refresh() }

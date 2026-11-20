@@ -5,6 +5,7 @@ struct ContentView: View {
     @EnvironmentObject private var session: AuthSession
     @EnvironmentObject private var store: MunicipalityStore
     @EnvironmentObject private var selections: SelectionsStore
+    @EnvironmentObject private var syncStatus: SyncStatus
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -33,6 +34,10 @@ struct ContentView: View {
             }
         }
         .task(id: session.token) {
+            // Wired here (before any load) so Firestore successes update "Last synced".
+            store.syncStatus = syncStatus
+            selections.syncStatus = syncStatus
+            syncStatus.setUser(session.isLoggedIn ? session.email : nil)
             await store.load(for: session.isLoggedIn ? session.email : nil)
         }
         // Selections follow both the user and the city; changing either reloads them.
@@ -78,4 +83,5 @@ struct MainTabView: View {
         .environmentObject(AuthSession())
         .environmentObject(MunicipalityStore())
         .environmentObject(SelectionsStore())
+        .environmentObject(SyncStatus())
 }
