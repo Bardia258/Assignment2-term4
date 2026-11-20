@@ -101,11 +101,6 @@ final class AuthSession: ObservableObject {
         }
     }
 
-    #if DEBUG
-    /// Lets testers demo the expiry flow without waiting 60 minutes.
-    func simulateExpiry() { expire() }
-    #endif
-
     // MARK: - Private
 
     private func expire() {

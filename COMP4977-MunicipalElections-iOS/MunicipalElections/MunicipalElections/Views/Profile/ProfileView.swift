@@ -82,15 +82,6 @@ struct ProfileView: View {
                 Button("Log Out", role: .destructive) { confirmingLogout = true }
             }
 
-            #if DEBUG
-            Section {
-                Button("Simulate Session Expiry") { session.simulateExpiry() }
-            } header: {
-                Text("Testing")
-            } footer: {
-                Text("Debug builds only. Shows the same logout and message as a real expired token.")
-            }
-            #endif
         }
         .navigationTitle("My Profile")
         .sheet(isPresented: $changingCity) {

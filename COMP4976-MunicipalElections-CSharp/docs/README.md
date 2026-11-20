@@ -9,9 +9,7 @@ required for this C# solution.
 | --- | --- |
 | [Architecture](architecture/ARCHITECTURE.md) | Seven projects, request flow, tenant isolation and Aspire. |
 | [ERD](erd/ERD.md) | Core SQL Server entities, Identity assignments and integrity rules. |
-| [API](api/API-ENDPOINTS.md) | Routes, filters, authentication, JSON examples and errors. |
-| [Data project](../MEMS.Data/README.md) | Standalone SQL configuration, migrations and seeding. |
-| [Admin project](../MEMS.Admin/README.md) | Admin routes, server authorization and image storage. |
+| [API](api/API-ENDPOINTS.md) | Routes, tenant filtering and examples. |
 
 ## Run locally
 
@@ -61,10 +59,6 @@ All five seeded local accounts use **`P@$$w0rd`**.
 | `Richmondadmin` | Municipality Administrator, Richmond. |
 | `pm` | Municipality Administrator, Pitt Meadows. |
 
-These passwords belong to the Development-only assignment seed mode.
-Restarting AppHost restores them for recognized seeded accounts and clears
-their login lockouts. It preserves existing role/municipality assignments and
-edited election records. This does not change the separate iOS SQLite users.
 
 Creating a municipality as Super Admin also creates an Identity administrator
 assigned only to it. The username is the initial slug plus `admin`: a `test`
@@ -88,24 +82,9 @@ files are stored separately, under `MEMS.Admin/App_Data/uploads` by default.
   search/filter candidates, display details and support a printable voting guide.
 - Voting selections stay in browser `sessionStorage`, separated by municipality;
   they are not sent to SQL Server, Firebase or an API write endpoint.
-- Repository checks, EF query filters/write guards and database relationships
-  protect tenant boundaries in addition to UI controls.
 
-## Maintenance notes
+## Notes
 
 The original SQLite/JWT backend now lives under
-[`COMP4977-MunicipalElections-iOS`](../../COMP4977-MunicipalElections-iOS/docs/README.md)
+[`COMP4977-MunicipalElections-iOS`](../../COMP4977-MunicipalElections-iOS/)
 and serves only the iOS application. It is not part of `MEMS.sln`.
-
-The seven-project solution previously restored and built in Release with zero
-warnings/errors. Earlier local SQL/Aspire and public integration checks were
-performed, but the removed test projects are not a runnable current test suite.
-No build or runtime checks were repeated for this documentation-only update.
-
-The SQL schema still includes an unused legacy `SavedCandidates` mapping; the
-public voting guide never uses it. Instructor feedback from Assignment 1 is
-not available in the workspace, so no instructor-specific resolution claims
-are made here.
-
-Developed by **Bardia Bashiri** (backend, database and Admin) and
-**Omar Mohamad** (public C# website and SwiftUI frontend).
