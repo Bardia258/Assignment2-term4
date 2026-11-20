@@ -1,10 +1,11 @@
 # iOS API reference
 
-The C# API is hosted at [the Azure server](https://municipal-elections-d8ffazd0dfevdpc6.westus3-01.azurewebsites.net/). Every path below is relative to that address.
+The iOS API is hosted at [the Azure server](https://assignment2-term4-dbe7c6evbpajetbf.westus3-01.azurewebsites.net/). Every path below is relative to that address.
 
 This is the SQLite-backed iOS API in `MunicipalElections.Web`. It uses JWT
 authentication and is separate from the COMP4976 SQL Server API. The routes
-below describe the current source; deploy the updated project for Azure to match.
+below describe the current source. Live directory/filter reads have been checked;
+authenticated login and Firebase integration still need verification on this deployment.
 Requests and responses use JSON.
 
 ## Endpoint list
@@ -144,13 +145,16 @@ compatible with the existing database; the API adds no saved-selection records.
 ## Configuration and deployment
 
 Publish `MunicipalElections.Web/MunicipalElections.Web.csproj` to the existing
-Azure App Service. Docker and SQL Server are not required for this backend.
-Keep the existing Azure configuration:
+Linux Azure Web App `assignment2-term4`. Docker Desktop and SQL Server are not
+required for this backend. Configure the following Azure settings:
 
 - `ConnectionStrings:DefaultConnection`: SQLite connection string, using a persistent database path.
 - `Jwt:SigningKey`: the existing server-side signing key (at least 32 UTF-8 bytes).
 - `Jwt:Issuer` and `Jwt:Audience`: retain their existing values.
 - `Uploads:RootPath`: persistent storage for existing photographs and logos, served at `/uploads`.
+
+The current database path is `/home/data/mems-ios/app.db`; upload storage is
+`/home/data/mems-ios/uploads`. Both are outside the deployed code directory.
 
 Use environment/App Service configuration or local user secrets. Environment
 keys use double underscores, for example `ConnectionStrings__DefaultConnection`

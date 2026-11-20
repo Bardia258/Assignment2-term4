@@ -27,10 +27,10 @@ Admin service-account credential; never add a private service-account key here.
 
 The API client currently targets:
 
-`https://municipal-elections-d8ffazd0dfevdpc6.westus3-01.azurewebsites.net/`
+`https://assignment2-term4-dbe7c6evbpajetbf.westus3-01.azurewebsites.net/`
 
-Deploy the current backend source before assuming this Azure instance matches
-the documented routes. Register/login with the API account; the app also signs
+The current backend was deployed to the Linux Web App `assignment2-term4`.
+Register/login with the API account; the app also signs
 into or creates the corresponding Firebase email/password account. Existing
 Firebase accounts must use the matching password. The two account systems do
 not automatically synchronize password changes or resets.
@@ -57,12 +57,17 @@ Windows host's `localhost`; the normal app configuration uses Azure. See the
 [API configuration](api/API-ENDPOINTS.md#configuration-and-deployment) before
 running or publishing, including persistent SQLite/image paths and JWT settings.
 
-The repository's manually triggered Azure workflow publishes this project to
-the existing App Service. Keep the configured runtime architecture and existing
-Azure login/deployment settings. Production does not migrate or seed on HTTP
-startup. After backing up the database and images, run migrations separately:
+The current app was deployed manually from a `linux-x64`, framework-dependent
+.NET 10 publish ZIP. The repository's existing GitHub workflow still targets the
+previous Windows app; it has not been changed for this new deployment.
+Production does not migrate or seed on HTTP startup. Its SQLite connection uses
+`Data Source=/home/data/mems-ios/app.db`, with images under
+`/home/data/mems-ios/uploads`, configured in Azure environment variables.
+After backing up any existing database/images, run migrations separately in
+the app's SSH terminal:
 
-```powershell
+```bash
+cd /home/site/wwwroot
 dotnet MunicipalElections.Web.dll --migrate-database
 ```
 
@@ -87,8 +92,11 @@ configuration available; do not replace the existing SQLite database on publish.
 
 The moved API previously passed restore, Debug/Release builds and isolated local
 HTTP checks for registration/login, JWT sessions, filtering, validation and image
-responses. No Azure deployment, live Firebase verification or native build was
-performed for this documentation update.
+responses. The new Azure deployment has since returned HTTP 200 for the service
+root/directory: three municipalities, 12 candidates including three mayors, and
+correct Burnaby candidate/position filtering. `/api/auth/me` returns 401 without
+a token, as expected. Authenticated login, live Firebase and the native app have
+not been verified against this deployment. Rebuild the iOS app to use the new URL.
 
 One known seed mismatch remains: Pitt Meadows currently seeds **6 Councillor
 seats**, while the iOS PDF specifies **5**. Existing seed rows are preserved, so

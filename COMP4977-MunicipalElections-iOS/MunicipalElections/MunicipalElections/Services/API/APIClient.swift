@@ -5,7 +5,7 @@ import Foundation
 /// decoding failures into an `APIError` with a user-friendly message.
 final class APIClient {
     static let shared = APIClient()
-    static let baseURL = URL(string: "https://municipal-elections-d8ffazd0dfevdpc6.westus3-01.azurewebsites.net/")!
+    static let baseURL = URL(string: "https://assignment2-term4-dbe7c6evbpajetbf.westus3-01.azurewebsites.net/")!
 
     private let session: URLSession
     private let decoder = JSONDecoder()
